@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8">
+        <title>Projects</title>
+        <link rel="icon" href="images/Potworek.png" type="image/icon">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div id="main">
+            <nav id="topnav">
+                <div id="navcontent">  
+                    <img id="logo" src="images/Potworek.png" alt="Logo">
+                    <a href="index.html">ABOUT ME</a>
+                    <a href="projects.html">PROJECTS</a>
+                    <a href="hobbies.html">INTERESTS</a>
+                </div>
+            </nav>
+
+            <h1>Two Player Hack'n'Slash Game</h1>
+
+            <img src="images/twoplayer.jpg" alt="Hack'n'Slash Game Photo">
+
+            <p>This Unity game is a prototype for a two player game played 
+                on one computer. Below is an implementation of camera that scales 
+                accordingly to the players' movement (idea taken from Lego games).
+            </p>
+
+            <pre><code class="language-csharp">
+void Update()
+{
+    playerDistance = Mathf.Abs(player2Trans.position.x - player1Trans.position.x);
+    if (playerDistance * playerDistance / 30 > 2)
+    {
+        cam.orthographicSize = 5;
+    }
+    else
+    {
+        cam.orthographicSize = 3 + playerDistance * playerDistance / 30;
+    }
+
+    if (player2Trans.position.x > player1Trans.position.x)
+    {
+        camPosition = player1Trans.position.x + playerDistance / 2;
+    }
+    else camPosition = player2Trans.position.x + playerDistance / 2;
+
+    cam.transform.position = new Vector3(camPosition, 0, -10);
+}
+            </code></pre>
+
+            <p>Players and enemies animations change accordingly to their actions. 
+                I have animations for idle, basic movement, attack, getting damaged and dying.
+            </p>
+
+            <pre><code class="language-csharp">
+void Attack()
+{
+    waitTime = Time.time + 0.4f;
+    //play an animation
+    animator.SetTrigger("Attack");
+    attackWaitTime = Time.time + 0.4f;
+    attack = true;
+
+    //detect and damage all enemies that are in range of attack
+    Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
+
+    foreach(Collider2D enemy in hitEnemies)
+    {
+        enemy.GetComponent<UnitStats>().TakeDamage(attackDamage);
+    }
+}
+            </code></pre>
+
+            <p>Every Hack'n'Slash requires proper movement. And that means managing animations, 
+                speed, checking if the player is crouching, moving, in air or idling and reacting accordingly. 
+                Below is just a short snipet of code.
+            </p>
+
+            <pre><code class="language-csharp">
+if (m_Grounded || m_AirControl)
+{
+    if (crouch)
+    {
+        if (!m_wasCrouching)
+        {
+            m_wasCrouching = true;
+            OnCrouchEvent.Invoke(true);
+        }
+        move *= m_CrouchSpeed;
+
+        if (m_CrouchDisableCollider != null)
+            m_CrouchDisableCollider.enabled = false;
+    }
+    else
+    {
+        if (m_CrouchDisableCollider != null)
+            m_CrouchDisableCollider.enabled = true;
+
+        if (m_wasCrouching)
+        {
+            m_wasCrouching = false;
+            OnCrouchEvent.Invoke(false);
+        }
+    }
+
+    Vector3 targetVelocity = new Vector2(move * 10f, m_Rigidbody2D.linearVelocity.y);
+    m_Rigidbody2D.linearVelocity = Vector3.SmoothDamp(m_Rigidbody2D.linearVelocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
+
+    if (move > 0 && !m_FacingRight)
+    {
+        Flip();
+    }
+    else if (move < 0 && m_FacingRight)
+    {
+        Flip();
+    }
+}
+            </code></pre>
+
+        </div>
+
+        <footer>
+            <p><b>Contact me: </b> sarazynd@gmail.com <br> &copy;2025 My Portfolio</p>
+        </footer>
+
+    </body>
+</html>

@@ -23,32 +23,30 @@
 
             <h1>Chinese Checkers</h1>
 
-            <img src="images/checkers.png" alt="Chinese Checkers Photo">
-
-            <a href="https://github.com/MichKorz/Lab_4">Check out the project!</a>
+            <img src="images/checkers.jpg" alt="Chinese Checkers Photo">
 
             <p>This Chinese Checkers game is a multiplayer application developed in Java, 
                 allowing up to six players to compete simultaneously. The game uses sockets 
                 to handle real-time communication between players, ensuring a smooth and responsive
-                 gameplay experience.</p>
+                 gameplay experience. <a href="https://github.com/MichKorz/Lab_4">Check out the project!</a></p>
 
             <pre><code class="language-java">
-                public void LaunchClient(GUIController controller)
-                {
-                    ExecutorService executor = Executors.newSingleThreadExecutor();
-                    Listener listener = new Listener(reader, controller);
-                    executor.execute(listener);
+public void LaunchClient(GUIController controller)
+{
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    Listener listener = new Listener(reader, controller);
+    executor.execute(listener);
 
-                    try
-                    {
-                        out = new PrintWriter(socket.getOutputStream(), true);
-                        controller.client = this;
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
+    try
+    {
+        out = new PrintWriter(socket.getOutputStream(), true);
+        controller.client = this;
+    }
+    catch (IOException e)
+    {
+        throw new RuntimeException(e);
+    }
+}
             </code></pre>
 
             <p>A key feature of this project is its ability to save and load 
@@ -59,38 +57,38 @@
                 technical complexity and user experience.</p>
 
             <pre><code class="language-java">
-                public boolean ValidateMove(String move)
-                {
-                    if(move.isEmpty()) return false;
+public boolean ValidateMove(String move)
+{
+    if(move.isEmpty()) return false;
 
-                    String[] splitMove = move.split(" ");
-                    if (splitMove[0].equals("E"))
-                        return false;
+    String[] splitMove = move.split(" ");
+    if (splitMove[0].equals("E"))
+        return false;
 
-                    int[] commands = new int[splitMove.length];
-                    for (int i = 0; i < splitMove.length; i++) {
-                        commands[i] = Integer.parseInt(splitMove[i]);
-                    }
+    int[] commands = new int[splitMove.length];
+    for (int i = 0; i < splitMove.length; i++) {
+        commands[i] = Integer.parseInt(splitMove[i]);
+    }
 
-                    Boolean validation = ruleset.validateMove(commands, isTurnOver);
-                    if(validation) {
-                        movesMade++;
-                        howManyPlayersWon = board.HowManyPlayersWon(howManyPlayersWon, commands[4]);
-                        return true;
-                    }
-                    return false;
+    Boolean validation = ruleset.validateMove(commands, isTurnOver);
+    if(validation) {
+        movesMade++;
+        howManyPlayersWon = board.HowManyPlayersWon(howManyPlayersWon, commands[4]);
+        return true;
+    }
+    return false;
 
-                }
+}
             </code></pre>
 
-            <p>The project uses several design patterns like singleton, factory and state</p>
+            <p>The project uses several design patterns like singleton, factory and state.</p>
 
             <pre><code class="language-java">
-                public interface GameState
-                {
-                    void stateLoop() throws IOException;
-                    void endState();
-                }
+public interface GameState
+{
+    void stateLoop() throws IOException;
+    void endState();
+}
             </code></pre>
 
 

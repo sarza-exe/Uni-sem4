@@ -11,7 +11,7 @@ body {
     align-items: center;
 }
 
-h1,h2,p,a {
+h1,h2,p {
     padding-left: 24%;
     padding-right: 24%;
 }
@@ -46,7 +46,7 @@ img {
 }
 
 @media (max-width: 700px) {
-    h1,p,a{
+    h1,p{
         padding-left: 20px;
         padding-right: 20px;
     }
@@ -68,6 +68,9 @@ img {
 }
 
 #topnav {
+    position:sticky;
+    top:0;
+    z-index: 100;
     overflow: hidden;
     background-color: #0e0e0e;
     display: flex; /* flexbox */

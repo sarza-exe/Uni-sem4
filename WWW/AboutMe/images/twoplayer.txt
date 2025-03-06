@@ -1,0 +1,202 @@
+public class GameManager : MonoBehaviour
+{
+    Camera cam;
+
+    public Transform player1Trans;
+    public Transform player2Trans;
+
+    float camPosition;
+
+    float playerDistance;
+
+    public UnitStats playerStats;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        cam = Camera.main;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        playerDistance = Mathf.Abs(player2Trans.position.x - player1Trans.position.x);
+        //Debug.Log("Distance = " + playerDistance);
+        if (playerDistance * playerDistance / 30 > 2)
+        {
+            cam.orthographicSize = 5;
+        }
+        else{
+            cam.orthographicSize = 3 + playerDistance * playerDistance / 30;
+        }
+
+
+        if (player2Trans.position.x > player1Trans.position.x)
+        {
+            camPosition = player1Trans.position.x + playerDistance / 2;
+        }
+        else camPosition = player2Trans.position.x + playerDistance / 2;
+
+        cam.transform.position = new Vector3(camPosition, 0, -10);
+
+        if (Input.GetButtonDown("Fire1") == true) playerStats.TakeDamage(9);
+    }
+}
+
+
+
+
+
+
+public class PlayerCombat : MonoBehaviour
+{
+    public Animator animator;
+
+    public LayerMask enemyLayers;
+    public Transform attackPoint;
+
+    public float attackRange = 0.5f;
+    int attackDamage;
+
+    public bool attack = false;
+
+    float waitTime;
+
+    float attackWaitTime;
+
+    void Start()
+    {
+        attackDamage = gameObject.GetComponent<UnitStats>().unitDamage;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        Debug.Log(attack);
+
+        if (attack && Time.time > attackWaitTime)
+        {
+            Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
+
+            //damage them
+            foreach (Collider2D enemy in hitEnemies)
+            {
+                enemy.GetComponent<UnitStats>().TakeDamage(attackDamage);
+            }
+
+            attack = false;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space) && Time.time > waitTime)
+        {
+            Attack();
+        }
+    }
+
+    void Attack()
+    {
+        waitTime = Time.time + 0.4f;
+        //play an animation
+        animator.SetTrigger("Attack");
+        attackWaitTime = Time.time + 0.4f;
+        attack = true;
+
+
+        /*//detect all enemies that are in range of attack
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
+
+        //damage them
+        foreach(Collider2D enemy in hitEnemies)
+        {
+            enemy.GetComponent<UnitStats>().TakeDamage(attackDamage);
+        }*/
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (attackPoint == null)
+            return;
+
+
+        Gizmos.DrawWireSphere(attackPoint.position, attackRange);
+    }
+}
+
+
+
+
+
+
+
+
+public void Move(float move, bool crouch, bool jump)
+	{
+		// If crouching, check to see if the character can stand up
+		if (!crouch)
+		{
+			// If the character has a ceiling preventing them from standing up, keep them crouching
+			if (Physics2D.OverlapCircle(m_CeilingCheck.position, k_CeilingRadius, m_WhatIsGround))
+			{
+				crouch = true;
+			}
+		}
+
+		//only control the player if grounded or airControl is turned on
+		if (m_Grounded || m_AirControl)
+		{
+
+			// If crouching
+			if (crouch)
+			{
+				if (!m_wasCrouching)
+				{
+					m_wasCrouching = true;
+					OnCrouchEvent.Invoke(true);
+				}
+
+				// Reduce the speed by the crouchSpeed multiplier
+				move *= m_CrouchSpeed;
+
+				// Disable one of the colliders when crouching
+				if (m_CrouchDisableCollider != null)
+					m_CrouchDisableCollider.enabled = false;
+			}
+			else
+			{
+				// Enable the collider when not crouching
+				if (m_CrouchDisableCollider != null)
+					m_CrouchDisableCollider.enabled = true;
+
+				if (m_wasCrouching)
+				{
+					m_wasCrouching = false;
+					OnCrouchEvent.Invoke(false);
+				}
+			}
+
+			// Move the character by finding the target velocity
+			Vector3 targetVelocity = new Vector2(move * 10f, m_Rigidbody2D.linearVelocity.y);
+			// And then smoothing it out and applying it to the character
+			m_Rigidbody2D.linearVelocity = Vector3.SmoothDamp(m_Rigidbody2D.linearVelocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
+
+			// If the input is moving the player right and the player is facing left...
+			if (move > 0 && !m_FacingRight)
+			{
+				// ... flip the player.
+				Flip();
+			}
+			// Otherwise if the input is moving the player left and the player is facing right...
+			else if (move < 0 && m_FacingRight)
+			{
+				// ... flip the player.
+				Flip();
+			}
+		}
+		// If the player should jump...
+		if (m_Grounded && jump)
+		{
+			// Add a vertical force to the player.
+			m_Grounded = false;
+			m_Rigidbody2D.AddForce(new Vector2(0f, m_JumpForce));
+		}
+	}
