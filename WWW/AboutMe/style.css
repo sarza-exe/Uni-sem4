@@ -8,9 +8,10 @@ body {
 
 #main {
     flex: 1;
+    align-items: center;
 }
 
-h1,h2,p {
+h1,h2,p,a {
     padding-left: 24%;
     padding-right: 24%;
 }
@@ -21,6 +22,14 @@ h2 {
 }
 
 p { font-size: 17px; }
+
+pre,code
+{
+    display: block;
+    margin: auto;
+    width: 71%;
+    font-size: 16px;
+}
 
 hr {
     width: 52%;
@@ -37,7 +46,7 @@ img {
 }
 
 @media (max-width: 700px) {
-    h1,p {
+    h1,p,a{
         padding-left: 20px;
         padding-right: 20px;
     }
@@ -54,6 +63,8 @@ img {
     }
 
     hr {width: 92%;}
+
+    pre,code{ width: 100%;}
 }
 
 #topnav {
