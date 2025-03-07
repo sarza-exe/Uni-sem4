@@ -11,44 +11,46 @@
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
-        <div id="main">
-            <nav id="topnav">
-                <div id="navcontent">  
-                    <img id="logo" src="images/Potworek.png" alt="Logo">
-                    <a href="index.html">ABOUT ME</a>
-                    <a href="projects.html">PROJECTS</a>
-                    <a href="hobbies.html">INTERESTS</a>
-                </div>
-            </nav>
+        <nav id="topnav">
+            <div>  
+                <img id="logo" src="images/Potworek.png" alt="Logo">
+                <a href="index.html">ABOUT ME</a>
+                <a href="projects.html">PROJECTS</a>
+                <a href="hobbies.html">INTERESTS</a>
+            </div>
+        </nav>
+        
+        <main>
 
-            <h1>Chinese Checkers</h1>
+            <h1>Linux System Info</h1>
 
-            <img src="images/checkers.jpg" alt="Chinese Checkers Photo">
+            <img src="images/osinfo.png" alt="App Photo">
 
             <p>This Bash script is a lightweight system monitoring tool for Linux that provides
                  real-time insights into system performance. It continuously tracks and displays
                   essential system metrics, including CPU usage per core, memory consumption, 
                   network speed, battery percentage, and system load averages. </p>
 
-                  <pre><code class="language-bash">
-main()
-{
-    
-    get_cpu_usage
-    get_network_base
+                  <pre id="myBash">
 
-    while true; do
-        sleep 1
-        clear
-        get_network_usage
+    main()
+    {
+        
         get_cpu_usage
-        get_power_info
-        get_loadavg_info
-        get_mem_info
-    done
+        get_network_base
 
-}
-                </code></pre>
+        while true; do
+            sleep 1
+            clear
+            get_network_usage
+            get_cpu_usage
+            get_power_info
+            get_loadavg_info
+            get_mem_info
+        done
+
+    }
+                </pre>
             
             <p>
                 The script refreshes every second, making it ideal for users who need a quick
@@ -84,7 +86,7 @@ echo ""
 echo -e "Inernet Speed:\t$(convert_speed $usage)"
             </code></pre>
 
-        </div>
+        </main>
 
         <footer>
             <p><b>Contact me: </b> sarazynd@gmail.com <br> &copy;2025 My Portfolio</p>
