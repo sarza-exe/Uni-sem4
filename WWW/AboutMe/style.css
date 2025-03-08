@@ -25,6 +25,11 @@
     }
 }
 
+html, body {
+    overflow-x: hidden; /* Prevents horizontal scrolling on the entire page */
+    max-width: 100%; /* Ensures the page does not exceed the viewport width */
+}
+
 body {
     margin: 0;
     font-family: sans-serif, Verdana, Arial, Helvetica;
@@ -80,6 +85,8 @@ img {
     width: 100%;
     padding-bottom: 10px;
 }
+
+a { color: rgba(0, 218, 11, 0.89);}
 
 @media (max-width: 700px) {
     main{
