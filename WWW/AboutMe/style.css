@@ -51,17 +51,20 @@ pre,code
 {
     display: block;
     margin: auto;
-    width: 71%;
     font-size: 16px;
 }
 
 #myBash
 {
+    
     background-color: #0e0e0e;
     color: rgb(201, 201, 201);
-    width: 100%;
     font-family: 'Courier New', Courier, monospace;
     font-weight: bold;
+    overflow-x: auto;
+    white-space: pre;
+    display: block;
+    max-width: 100%;
 }
 
 hr {
@@ -102,38 +105,38 @@ img {
 }
 
 #topnav {
-    position:sticky;
-    top:0;
+    position: sticky;
+    top: 0;
     z-index: 100;
-    overflow: hidden;
+    overflow-x: auto; 
+    white-space: nowrap;
     background-color: #0e0e0e;
-    display: flex; /* flexbox */
+    display: flex;
+    align-items: center;
 }
 
 #logo {
     float: left;
-    display: block;
     height: 40px;
     width: auto;
 }
 
 #topnav a {
-    float: left;
-    display: block;
+    display: inline-block;
     color: #f2f2f2;
     text-align: center;
     padding: 14px 10px;
-    text-decoration: none; /* removes underlining */
+    text-decoration: none;
     font-size: 17px;
 }
 
 #topnav a:hover {
-    background-color: #1ed14b;
-    color: black;
+    background-color: #135e96;
 }
 
 footer {
-    background-color: #1ed14b;
+    background-color: #135e96;
+    color: white;
     text-align: center;
     padding: 10px;
     width: 100%;
