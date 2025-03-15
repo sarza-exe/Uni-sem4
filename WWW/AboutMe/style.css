@@ -25,6 +25,11 @@
     }
 }
 
+html, body {
+    overflow-x: hidden; /* Prevents horizontal scrolling on the entire page */
+    max-width: 100%; /* Ensures the page does not exceed the viewport width */
+}
+
 body {
     margin: 0;
     font-family: sans-serif, Verdana, Arial, Helvetica;
@@ -81,6 +86,8 @@ img {
     padding-bottom: 10px;
 }
 
+a { color: rgba(0, 218, 11, 0.89);}
+
 @media (max-width: 700px) {
     main{
         margin-left: 2%;
@@ -112,12 +119,14 @@ img {
     white-space: nowrap;
     background-color: #0e0e0e;
     display: flex;
-    align-items: center;
+    align-items: left;
 }
 
 #logo {
-    float: left;
+    display: inline-block;
     height: 40px;
+    padding-bottom: 0px;
+    margin: 0px;
     width: auto;
 }
 
