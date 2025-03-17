@@ -75,14 +75,18 @@ int Search(TwoWayCyclic* list, int value) {
 int main() {
     TwoWayCyclic cyclic, cyclic2;
 
-    for (int i = 1; i <= 10; i++) {
+    for (int i = 20; i < 30; i++) {
         Insert(&cyclic, i);
         Insert(&cyclic2, i+10);
     }
+    cout << "List1: ";
+    Display(&cyclic);
+    cout << "List2: ";
+    Display(&cyclic2);
 
     Merge(&cyclic, &cyclic2);
 
-    cout << "Merge of lists [1, ..., 10] and [11, ... 20] \n";
+    cout << "Merge of list1 and list2\n";
     Display(&cyclic);
 
 

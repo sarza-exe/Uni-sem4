@@ -108,13 +108,13 @@ int main()
   FIFO<int> fifo;
 
   cout << "Queue test. Inserting numbers 0-9." << endl;
-  for(int i = 0; i < 10; i++)
+  for(int i = 0; i < 50; i++)
   {
     fifo.queue(i);
   }
 
   cout << "Dequeuing elements in the queue." << endl;
-  for(int i = 0; i < 11; i++)
+  for(int i = 0; i < 51; i++)
   {
     try{
       cout << fifo.dequeue() << endl;
@@ -129,13 +129,13 @@ int main()
   LIFO<int> lifo;
 
   cout << "\nStack test. Pushing numbers 0-9." << endl;
-  for(int i = 0; i < 10; i++)
+  for(int i = 0; i < 50; i++)
   {
     lifo.push(i);
   }
 
   cout << "Poping elements in the queue." << endl;
-  for(int i = 0; i < 11; i++)
+  for(int i = 0; i < 51; i++)
   {
     try{
       cout << lifo.pop() << endl;
