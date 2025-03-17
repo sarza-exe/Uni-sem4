@@ -1,0 +1,3 @@
+C:/Users/Sara/Desktop/laby/Uni-sem4/AiSD/Lab1/cmake-build-debug/CMakeFiles/Lab1.dir
+C:/Users/Sara/Desktop/laby/Uni-sem4/AiSD/Lab1/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/Sara/Desktop/laby/Uni-sem4/AiSD/Lab1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
