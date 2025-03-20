@@ -1,5 +1,5 @@
 //
-// Created by Sara on 19.03.2025.
+// Created by Sara on 20.03.2025.
 //
 #include <iostream>
 using namespace std;
@@ -14,9 +14,14 @@ bool isBigger(const int a, const int b) {
     return a > b;
 }
 
-void move(int *array, const int i, const int j) {
+void swapPos(int *array, const int i, const int j) {
     moves += 3;
     swap(array[i], array[j]);
+}
+
+void moveInsert(int *array, const int i, const int value) {
+    moves++;
+    array[i] = value;
 }
 
 void display(int *array)
@@ -29,6 +34,19 @@ void display(int *array)
     cout << endl;
 }
 
+void InsertSort(int *array, const int l, const int h) {
+    for (int i = l+1; i <= h; i++) {
+        int key = array[i];
+        int j = i - 1;
+        while (j >= l && isBigger(array[j], key)) {
+            moveInsert(array, j+1, array[j]);
+            j--;
+        }
+        moveInsert(array, j+1, key);
+        if(showSteps) display(array);
+    }
+}
+
 int partition(int *array, const int l, const int h)
 {
     int pivot = array[l];
@@ -39,12 +57,12 @@ int partition(int *array, const int l, const int h)
         if(isBigger(array[j], pivot))
         {
             i--;
-            move(array, i, j);
+            swapPos(array, i, j);
         }
     }
 
     //move pivot after smaller elements
-    move(array, l, i - 1);
+    swapPos(array, l, i - 1);
     display(array);
     return i - 1;
 
@@ -52,12 +70,16 @@ int partition(int *array, const int l, const int h)
 
 void QuickSort(int *array, const int l, const int h) 
 {
-    if (l < h)
+    if ((h-l) > 11)
     {
         int pivot = partition(array, l, h);
 
         QuickSort(array, l, pivot-1);
         QuickSort(array, pivot+1, h);
+    }
+    else // for n <= 12
+    {
+        InsertSort(array, l, h);
     }
 }
 
