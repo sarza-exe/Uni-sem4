@@ -2,6 +2,8 @@
 // Created by Sara on 20.03.2025.
 //
 #include <iostream>
+#include <fstream>
+#include <random>
 using namespace std;
 
 int comparisons = 0;
@@ -47,37 +49,37 @@ void InsertSort(int *array, const int l, const int h) {
     }
 }
 
-int partition(int *array, const int l, const int h)
+int partition(int *array, int low, int high)
 {
-    int pivot = array[l];
-    int i = h+1;
+    int pivot = array[high] ;
+    int i ,j;
+    j = low;
 
-    for(int j = h; j > l; j--)
+    for (int i = low; i < high; i++)
     {
-        if(isBigger(array[j], pivot))
+        if(isBigger(pivot, array[i]))
         {
-            i--;
             swapPos(array, i, j);
+            j += 1;
         }
     }
 
-    //move pivot after smaller elements
-    swapPos(array, l, i - 1);
-    display(array);
-    return i - 1;
+    swapPos(array, j, high);
+    if(showSteps) display(array);
 
+    return j; 
 }
 
-void QuickSort(int *array, const int l, const int h) 
+void HybridSort(int *array, const int l, const int h) 
 {
-    if ((h-l) > 11)
+    if ((h-l) > 17)
     {
         int pivot = partition(array, l, h);
 
-        QuickSort(array, l, pivot-1);
-        QuickSort(array, pivot+1, h);
+        HybridSort(array, l, pivot-1);
+        HybridSort(array, pivot+1, h);
     }
-    else // for n <= 12
+    else // for n <= 18
     {
         InsertSort(array, l, h);
     }
@@ -100,7 +102,7 @@ int main()
 
     if(showSteps) display(array);
 
-    QuickSort(array, 0, n-1);
+    HybridSort(array, 0, n-1);
 
     if(showSteps)
     {
@@ -123,6 +125,60 @@ int main()
     }
 
     cout << "Array is indeed sorted\n";
+
+
+
+    /*
+    //Code for saving data
+    showSteps = false;
+    std::ofstream file("hybridSortData.txt"); // Open in append mode
+    std::ofstream file2("hybridSortDataBig.txt");
+
+    if (!file || !file2) {
+        std::cerr << "Error opening file!" << std::endl;
+        return -1;
+    }
+
+    random_device rd;
+    mt19937 rng(rd());
+
+    for(int i = 10; i <= 50; i += 10)
+    {
+        int arr[i];
+        uniform_int_distribution<int> bin(0, 2*i-1);
+        for(int k = 0; k < 100; k++) // repeat 100 times
+        {
+            comparisons = 0;
+            moves = 0;
+            for (int j = 0; j < i; j++) {
+                arr[j] = bin(rng);
+            }
+            HybridSort(arr, 0, i-1);
+            file << comparisons << " " << moves << " ";
+        }   
+        file << "\n";  
+    }
+
+    for(int i = 1000; i <= 50000; i += 1000)
+    {
+        int arr[i];
+        uniform_int_distribution<int> bin(0, 2*i-1);
+        for(int k = 0; k < 100; k++) // repeat 100 times
+        {
+            comparisons = 0;
+            moves = 0;
+            for (int j = 0; j < i; j++) {
+                arr[j] = bin(rng);
+            }
+            HybridSort(arr, 0, i-1);
+            file2 << comparisons << " " << moves << " ";
+        }   
+        file2 << "\n";  
+    }
+        
+    file.close();
+    file2.close();
+    */
     
     return 0;
 }

@@ -2,32 +2,9 @@
 // Created by Sara on 19.03.2025.
 //
 #include <iostream>
+#include <fstream>
+#include <random>
 using namespace std;
-
-/*
-● INSERTION SORT ,
-● QUICK SORT ,
-● Algorytm hybrydowy: QUICK SORT, który dla małych podtablic przełącza się na
-INSERTION SORT.
-
-● Dla rozmiaru danych n < 40:
-○ stany sortowanej tablicy w istotnych momentach (np. w MERGE SORT - po
-zakończeniu każdego scalania),
-
-● Dla dowolnego rozmiaru danych, na końcu:
-○ łączną liczbę porównań między kluczami,
-○ łączną liczbę przestawień kluczy.
-(Zaimplementować osobne funkcje/procedury do porównywania i
-przestawiania kluczy, które dodatkowo zwiększają swój globalny licznik
-odpowiednio porównań lub przestawień.)
-
-Finalnie, program sam sprawdza, czy wynikowy ciąg jest posortowanym ciągiem
-wejściowym.
-W prezentacji zademonstrować testy dla długości tablicy n ( n ∈ {8, 32}) dla ciągów:
-● losowego,
-● posortowanego malejąco,
-● posortowanego rosnąco.
-*/
 
 int comparisons = 0;
 int moves = 0;
@@ -106,6 +83,40 @@ int main()
     }
 
     cout << "Array is indeed sorted\n";
+
     
+    /*
+    //code for saving data
+    showSteps = false;
+    std::ofstream file("insertSortData.txt");
+
+    if (!file) {
+        std::cerr << "Error opening file!" << std::endl;
+        return -1;
+    }
+
+    random_device rd;
+    mt19937 rng(rd());
+
+    for(int i = 10; i <= 50; i += 10)
+    {
+        int arr[i];
+        uniform_int_distribution<int> bin(0, 2*i-1);
+        for(int k = 0; k < 100; k++) // repeat 100 times
+        {
+            comparisons = 0;
+            moves = 0;
+            for (int j = 0; j < i; j++) {
+                arr[j] = bin(rng);
+            }
+            InsertSort(arr, i);
+            file << comparisons << " " << moves << " ";
+        }   
+        file << "\n";  
+    }
+        
+    file.close();
+    */
+
     return 0;
 }

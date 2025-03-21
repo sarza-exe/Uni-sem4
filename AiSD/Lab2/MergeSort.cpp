@@ -1,9 +1,10 @@
 //
-// Created by Sara on 19.03.2025.
+// Created by Sara on 21.03.2025.
 //
 #include <iostream>
 #include <fstream>
 #include <random>
+#include <vector>
 using namespace std;
 
 int comparisons = 0;
@@ -16,9 +17,9 @@ bool isBigger(const int a, const int b) {
     return a > b;
 }
 
-void move(int *array, const int i, const int j) {
-    moves += 3;
-    swap(array[i], array[j]);
+void move(int *array, const int i, const int value) {
+    moves ++;
+    array[i] = value;
 }
 
 void display(int *array)
@@ -31,36 +32,52 @@ void display(int *array)
     cout << endl;
 }
 
-int partition(int *array, int low, int high)
+void Merge(int *arr, int low, int mid, int high)
 {
-    int pivot = array[high] ;
-    int i ,j;
-    j = low;
+    vector<int> temp; // temporary array
+    int left = low;      // starting index of left half of arr
+    int right = mid + 1;   // starting index of right half of arr
 
-    for (int i = low; i < high; i++)
-    {
-        if(isBigger(pivot, array[i]))
-        {
-            move(array, i, j);
-            j += 1;
+    //storing elements in the temporary array in a sorted manner
+    while (left <= mid && right <= high) {
+        moves++;
+        if(isBigger(arr[left], arr[right])){
+            temp.push_back(arr[right]);
+            right++;
+        }
+        else{
+            temp.push_back(arr[left]);
+            left++;
         }
     }
 
-    move(array, j, high);
-    if(showSteps) display(array);
+    // if elements on the left half are still left
+    while (left <= mid) {
+        moves++;
+        temp.push_back(arr[left]);
+        left++;
+    }
 
-    return j; 
+    //  if elements on the right half are still left
+    while (right <= high) {
+        moves++;
+        temp.push_back(arr[right]);
+        right++;
+    }
+
+    // transfering all elements from temporary to arr
+    for (int i = low; i <= high; i++) {
+        move(arr, i, temp[i-low]);
+    }
 }
 
-void QuickSort(int *array, const int l, const int h) 
+void MergeSort(int *array, const int low, const int high) 
 {
-    if (l < h)
-    {
-        int pivot = partition(array, l, h);
-
-        QuickSort(array, l, pivot-1);
-        QuickSort(array, pivot+1, h);
-    }
+    if (low >= high) return;
+    int mid = (low + high) / 2 ;
+    MergeSort(array, low, mid);  // left half
+    MergeSort(array, mid + 1, high); // right half
+    Merge(array, low, mid, high);  // merging sorted halves
 }
 
 
@@ -80,7 +97,7 @@ int main()
 
     if(showSteps) display(array);
 
-    QuickSort(array, 0, n-1);
+    MergeSort(array, 0, n-1);
 
     if(showSteps)
     {
@@ -108,8 +125,8 @@ int main()
     /*
     //code for saving data
     showSteps = false;
-    std::ofstream file("quickSortData.txt"); 
-    std::ofstream file2("quickSortDataBig.txt");
+    std::ofstream file("mergeSortData.txt");
+    std::ofstream file2("mergeSortDataBig.txt");
 
     if (!file || !file2) {
         std::cerr << "Error opening file!" << std::endl;
@@ -130,7 +147,7 @@ int main()
             for (int j = 0; j < i; j++) {
                 arr[j] = bin(rng);
             }
-            QuickSort(arr, 0, i-1);
+            MergeSort(arr, 0, i-1);
             file << comparisons << " " << moves << " ";
         }   
         file << "\n";  
@@ -147,7 +164,7 @@ int main()
             for (int j = 0; j < i; j++) {
                 arr[j] = bin(rng);
             }
-            QuickSort(arr, 0, i-1);
+            MergeSort(arr, 0, i-1);
             file2 << comparisons << " " << moves << " ";
         }   
         file2 << "\n";  
