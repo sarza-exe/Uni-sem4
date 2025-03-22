@@ -72,14 +72,14 @@ int partition(int *array, int low, int high)
 
 void HybridSort(int *array, const int l, const int h) 
 {
-    if ((h-l) > 17)
+    if ((h-l) > 16)
     {
         int pivot = partition(array, l, h);
 
         HybridSort(array, l, pivot-1);
         HybridSort(array, pivot+1, h);
     }
-    else // for n <= 18
+    else // for n <= 17
     {
         InsertSort(array, l, h);
     }
@@ -131,8 +131,8 @@ int main()
     /*
     //Code for saving data
     showSteps = false;
-    std::ofstream file("hybridSortData.txt"); // Open in append mode
-    std::ofstream file2("hybridSortDataBig.txt");
+    std::ofstream file("data/hybridSortData.txt"); // Open in append mode
+    std::ofstream file2("data/hybridSortDataBig.txt");
 
     if (!file || !file2) {
         std::cerr << "Error opening file!" << std::endl;

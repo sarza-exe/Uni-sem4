@@ -88,7 +88,7 @@ int main()
     /*
     //code for saving data
     showSteps = false;
-    std::ofstream file("insertSortData.txt");
+    std::ofstream file("data/insertSortData.txt");
 
     if (!file) {
         std::cerr << "Error opening file!" << std::endl;

@@ -1,16 +1,13 @@
 #!/bin/bash
+data_generators=("./data_random" "./data_desc" "./data_asc")
+sorting_programs=("./InsertSort" "./QuickSort" "./HybridSort")
 
-# Check if exactly two arguments are provided
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <executable1> <executable2>"
-    exit 1
-fi
-
-# Assign arguments to variables
-exec1="./$1"
-exec2="./$2"
-
-for i in {8..32}; do
-    $exec1 $i | $exec2
-    echo
+for program in "${sorting_programs[@]}"; do
+    for generator in "${data_generators[@]}"; do
+        for i in {8..32}; do
+            echo "$generator $i | $program"
+            $generator $i | $program
+            echo
+        done;
+    done;
 done;

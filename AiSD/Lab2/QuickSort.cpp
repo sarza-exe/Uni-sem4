@@ -108,8 +108,8 @@ int main()
     /*
     //code for saving data
     showSteps = false;
-    std::ofstream file("quickSortData.txt"); 
-    std::ofstream file2("quickSortDataBig.txt");
+    std::ofstream file("data/quickSortData.txt"); 
+    std::ofstream file2("data/quickSortDataBig.txt");
 
     if (!file || !file2) {
         std::cerr << "Error opening file!" << std::endl;
@@ -154,8 +154,7 @@ int main()
     }
         
     file.close();
-    file2.close();
-    */
+    file2.close();*/
 
     return 0;
 }

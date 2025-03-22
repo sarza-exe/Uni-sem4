@@ -125,8 +125,8 @@ int main()
     /*
     //code for saving data
     showSteps = false;
-    std::ofstream file("mergeSortData.txt");
-    std::ofstream file2("mergeSortDataBig.txt");
+    std::ofstream file("data/mergeSortData.txt");
+    std::ofstream file2("data/mergeSortDataBig.txt");
 
     if (!file || !file2) {
         std::cerr << "Error opening file!" << std::endl;
