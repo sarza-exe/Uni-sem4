@@ -115,7 +115,8 @@ procedure  Travelers is
     Position: Position_Type;    
   end record;
 
-
+   -- task type is a type of task that must be declared
+   -- task would just start. https://learn.adacore.com/courses/intro-to-ada/chapters/tasking.html#tasks
   task type Traveler_Task_Type is	
     entry Init(Id: Integer; Seed: Integer; Symbol: Character);
     entry Start;
@@ -158,6 +159,8 @@ procedure  Travelers is
     end Make_Step;
 
   begin
+    -- [accept Init do <code> end Init] synchronizes with main. 
+    -- So main stops until accept do... end block finished
     accept Init(Id: Integer; Seed: Integer; Symbol: Character) do
       Reset(G, Seed); 
       Traveler.Id := Id;
@@ -175,6 +178,7 @@ procedure  Travelers is
     end Init;
     
     -- wait for initialisations of the remaining tasks:
+    -- It ensures every Init block in other tasks is finished
     accept Start do
       null;
     end Start;

@@ -94,11 +94,12 @@ func Print_Traces(Traces Traces_Sequence_Type) {
 
 // through Channels you can send and receive values with the channel operator, <-.
 // The data flows in the direction of the arrow
-func Printer(printerChan chan Traces_Sequence_Type) {
+func Printer(printerChan chan Traces_Sequence_Type, Wait_for_Finish *sync.WaitGroup) {
 	for i := 0; i < Nr_Of_Travelers; i++ {
 		report := <-printerChan
 		Print_Traces(report)
 	}
+	defer Wait_for_Finish.Done()
 }
 
 type Traveler_Type struct {
@@ -108,15 +109,13 @@ type Traveler_Type struct {
 }
 
 type Traveler_Task_Type struct {
-	// i think i don't need a generator
 	Traveler    Traveler_Type
 	Time_Stamp  time.Duration
 	Nr_of_Steps int
 	Traces      Traces_Sequence_Type
-	Start_Chan  chan struct{}
 }
 
-func (t *Traveler_Task_Type) Init(Id int, Seed int, Symbol rune) {
+func (t *Traveler_Task_Type) Init(Id int, Seed int, Symbol rune, wg *sync.WaitGroup) {
 	t.Traveler.Id = Id
 	t.Traveler.Symbol = Symbol
 	t.Traces.Last = -1 // IS IT NEEEEEEEEDED?????
@@ -132,32 +131,26 @@ func (t *Traveler_Task_Type) Init(Id int, Seed int, Symbol rune) {
 	// Time_Stamp of initialization
 	t.Time_Stamp = time.Since(Start_Time)
 
-	t.Start_Chan = make(chan struct{}) // Channel to synchronize the start of the task
+	defer wg.Done()
 }
 
-func (t *Traveler_Task_Type) Start(printerChan chan Traces_Sequence_Type, wg *sync.WaitGroup) {
-	// Wait for the start signal
-	//<-t.Start_Chan
-	defer wg.Done()
-
-	fmt.Print("start")
-
+func (t *Traveler_Task_Type) Start(printerChan chan Traces_Sequence_Type, Wait_for_Finish *sync.WaitGroup) {
 	// Simulate the task doing some work for NrOfSteps
 	for step := 0; step <= t.Nr_of_Steps; step++ {
 		time.Sleep(Min_Delay + time.Duration(rand.Float64()*float64(Max_Delay-Min_Delay)))
 		// Make a move
 		t.Make_Step()
-		t.Store_Trace()
 		t.Time_Stamp = time.Since(Start_Time)
+		t.Store_Trace()
+
 	}
 	// When finished, send the report to the Printer.
 	printerChan <- t.Traces
-	//t.wg.Done() // Mark the task as done
+	defer Wait_for_Finish.Done() // Mark the task as done. Defer waits for func to complete
 }
 
 func (t *Traveler_Task_Type) Make_Step() {
-	// Generate a random number between 0 and 3
-	N := int(4.0 * rand.Float64())
+	N := int(4.0 * rand.Float64()) // Generate a random number between 0 and 3
 
 	switch N {
 	case 0:
@@ -189,7 +182,8 @@ func main() {
 
 	printerChan := make(chan Traces_Sequence_Type, Nr_Of_Travelers)
 
-	var wg sync.WaitGroup
+	var Wait_to_Start sync.WaitGroup
+	var Wait_for_Finish sync.WaitGroup
 
 	fmt.Printf(
 		"-1 %d %d %d\n",
@@ -198,15 +192,25 @@ func main() {
 		Board_Height,
 	)
 
-	for index, element := range Travel_Tasks {
-		element.Init(index, Seeds[index], Symbol)
+	//for index, element := range Travel_Tasks {  element.Init(index, Seeds[index], Symbol, &Wait_to_Start)
+	//element makes a copy of Travel_Task
+	for index := range Travel_Tasks {
+		Wait_to_Start.Add(1)
+		go Travel_Tasks[index].Init(index, Seeds[index], Symbol, &Wait_to_Start)
 		Symbol++
 	}
 
-	go Printer(printerChan)
+	Wait_to_Start.Wait() // Wait for Travel tasks to finish Init
+
+	Wait_for_Finish.Add(1)
+	go Printer(printerChan, &Wait_for_Finish)
 
 	for _, task := range Travel_Tasks {
-		wg.Add(1)
-		go task.Start(printerChan, &wg)
+		Wait_for_Finish.Add(1)
+		go task.Start(printerChan, &Wait_for_Finish)
 	}
+
+	//And every program in Golang executes until main function is not terminated
+	Wait_for_Finish.Wait()
+	// we wait for Printer and all Travel_Tasks to finish
 }
