@@ -159,18 +159,17 @@ Board : array(0 .. Board_Width-1, 0 .. Board_Height-1) of Tile;
       Reset(G, Seed); 
       Traveler.Id := Id;
       Traveler.Symbol := Symbol;
-      -- Random initial position:
+      -- Choose random position on board until you find one that's unoccupied
       declare
         Success : Boolean;
         Pos     : Position_Type;
       begin
         loop
-            -- Choose a random position on the board.
             Pos.X := Integer( Float'Floor( Float( Board_Width )  * Random(G) ) );
             Pos.Y := Integer( Float'Floor( Float( Board_Height ) * Random(G) ) );
             Board(Pos.X, Pos.Y).Try_Acquire(Success);  -- Try to acquire the cell at this position.
             if Success then
-              Traveler.Position := Pos; -- We successfully acquired the cell.
+              Traveler.Position := Pos; -- Successfully acquired the cell.
               exit;  -- exit the loop once a free cell is found.
             end if;
         end loop;
