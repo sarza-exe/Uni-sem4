@@ -72,23 +72,6 @@ func Release_Tile(X, Y int) {
 	Board[X][Y] <- struct{}{}
 }
 
-// elementary steps
-func Move_Down(Position *Position_Type) {
-	Position.Y = (Position.Y + 1) % Board_Height
-}
-
-func Move_Up(Position *Position_Type) {
-	Position.Y = (Position.Y + Board_Height - 1) % Board_Height
-}
-
-func Move_Right(Position *Position_Type) {
-	Position.X = (Position.X + 1) % Board_Width
-}
-
-func Move_Left(Position *Position_Type) {
-	Position.X = (Position.X + Board_Width - 1) % Board_Width
-}
-
 // traces of travelers
 type Trace_Type struct {
 	Time_Stamp time.Duration
@@ -209,23 +192,6 @@ func (t *Traveler_Task_Type) Start(printerChan chan Traces_Sequence_Type, Wait_f
 	// When finished, send the report to the Printer.
 	printerChan <- t.Traces
 	defer Wait_for_Finish.Done() // Mark the task as done. Defer waits for func to complete
-}
-
-func (t *Traveler_Task_Type) Make_Step() {
-	N := int(4.0 * rand.Float64()) // Generate a random number between 0 and 3
-
-	switch N {
-	case 0:
-		Move_Up(&t.Traveler.Position)
-	case 1:
-		Move_Down(&t.Traveler.Position)
-	case 2:
-		Move_Left(&t.Traveler.Position)
-	case 3:
-		Move_Right(&t.Traveler.Position)
-	default:
-		fmt.Printf(" ?????????????? %d\n", N)
-	}
 }
 
 func (t *Traveler_Task_Type) Store_Trace() {
