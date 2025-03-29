@@ -67,6 +67,15 @@ func Acquire_Tile(X, Y int) bool {
 	}
 }
 
+func Try_Acquire_Tile(X, Y int) bool { // for init
+	select {
+	case <-Board[X][Y]:
+		return true
+	default: // If value is not available return false immediately
+		return false
+	}
+}
+
 func Release_Tile(X, Y int) {
 	//struct{}{}, the first pair {} defines an empty struct type, and the second pair {} is a literal that creates an instance of that empty struct.
 	Board[X][Y] <- struct{}{}
@@ -140,7 +149,7 @@ func (t *Traveler_Task_Type) Init(Id int, Seed int, Symbol rune, wg *sync.WaitGr
 			X: int(math.Floor(float64(Board_Width) * rand.Float64())),
 			Y: int(math.Floor(float64(Board_Height) * rand.Float64())),
 		}
-		if Acquire_Tile(Pos.X, Pos.Y) {
+		if Try_Acquire_Tile(Pos.X, Pos.Y) {
 			t.Traveler.Position = Pos
 			break
 		}
@@ -235,9 +244,9 @@ func main() {
 	Wait_for_Finish.Add(1)
 	go Printer(printerChan, &Wait_for_Finish)
 
-	for _, task := range Travel_Tasks {
+	for index := range Travel_Tasks {
 		Wait_for_Finish.Add(1)
-		go task.Start(printerChan, &Wait_for_Finish)
+		go Travel_Tasks[index].Start(printerChan, &Wait_for_Finish)
 	}
 
 	//And every program in Golang executes until main function is not terminated

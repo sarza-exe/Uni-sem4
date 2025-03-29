@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 )
@@ -42,21 +42,42 @@ type Position_Type struct {
 	Y int
 }
 
-// elementary steps
-func Move_Down(Position *Position_Type) {
-	Position.Y = (Position.Y + 1) % Board_Height
+// We use struct{} because it's the smallest data type in go and we don't send any data
+var Board [Board_Width][Board_Height]chan struct{}
+
+func Init_Board() {
+	for i := 0; i < Board_Width; i++ {
+		for j := 0; j < Board_Height; j++ {
+			// creates chan with buffor of size 1, which means every chan can store max of 1 token (struct{})
+			Board[i][j] = make(chan struct{}, 1)
+			// free tile is one that contains token struct{}
+			Board[i][j] <- struct{}{}
+		}
+	}
 }
 
-func Move_Up(Position *Position_Type) {
-	Position.Y = (Position.Y + Board_Height - 1) % Board_Height
+func Acquire_Tile(X, Y int) bool {
+	// This is Timeout. Select proceeds with the first receive that's ready
+	select {
+	case <-Board[X][Y]:
+		return true
+	case <-time.After(Max_Delay):
+		return false
+	}
 }
 
-func Move_Right(Position *Position_Type) {
-	Position.X = (Position.X + 1) % Board_Width
+func Try_Acquire_Tile(X, Y int) bool { // for init
+	select {
+	case <-Board[X][Y]:
+		return true
+	default: // If value is not available return false immediately
+		return false
+	}
 }
 
-func Move_Left(Position *Position_Type) {
-	Position.X = (Position.X + Board_Width - 1) % Board_Width
+func Release_Tile(X, Y int) {
+	//struct{}{}, the first pair {} defines an empty struct type, and the second pair {} is a literal that creates an instance of that empty struct.
+	Board[X][Y] <- struct{}{}
 }
 
 // traces of travelers
@@ -113,6 +134,7 @@ type Traveler_Task_Type struct {
 	Time_Stamp  time.Duration
 	Nr_of_Steps int
 	Traces      Traces_Sequence_Type
+	Direction   int
 }
 
 func (t *Traveler_Task_Type) Init(Id int, Seed int, Symbol rune, wg *sync.WaitGroup) {
@@ -120,10 +142,20 @@ func (t *Traveler_Task_Type) Init(Id int, Seed int, Symbol rune, wg *sync.WaitGr
 	t.Traveler.Symbol = Symbol
 	t.Traces.Last = -1
 
-	rand.Seed(int64(Seed))
-	t.Traveler.Position = Position_Type{ // Random initial position:
-		X: int(math.Floor(float64(Board_Width) * rand.Float64())),
-		Y: int(math.Floor(float64(Board_Height) * rand.Float64()))}
+	// Starting postion : (id, id)
+	Pos := Position_Type{X: t.Traveler.Id, Y: t.Traveler.Id}
+	Try_Acquire_Tile(Pos.X, Pos.Y)
+	t.Traveler.Position = Pos
+
+	// Get moving direction
+	N := int(2.0 * rand.Float64())
+	if N == 0 {
+		t.Direction = 1
+	} else if t.Traveler.Id%2 == 0 {
+		t.Direction = Board_Height - 1
+	} else {
+		t.Direction = Board_Width - 1
+	}
 
 	t.Store_Trace() //store starting position
 	// Number of steps to be made by the traveler
@@ -136,13 +168,29 @@ func (t *Traveler_Task_Type) Init(Id int, Seed int, Symbol rune, wg *sync.WaitGr
 
 func (t *Traveler_Task_Type) Start(printerChan chan Traces_Sequence_Type, Wait_for_Finish *sync.WaitGroup) {
 	// Simulate the task doing some work for NrOfSteps
-	for step := 0; step < t.Nr_of_Steps; step++ {
+	for step := 0; step <= t.Nr_of_Steps; step++ {
 		time.Sleep(Min_Delay + time.Duration(rand.Float64()*float64(Max_Delay-Min_Delay)))
+
 		// Make a move
-		t.Make_Step()
-		t.Time_Stamp = time.Since(Start_Time)
-		t.Store_Trace()
-		//fmt.Printf("%c %d\t", t.Traveler.Symbol, step)
+		New_Pos := t.Traveler.Position
+		if t.Traveler.Id%2 == 0 {
+			New_Pos.Y = (t.Traveler.Position.Y + t.Direction) % Board_Height
+		} else {
+			New_Pos.X = (t.Traveler.Position.X + t.Direction) % Board_Width
+		}
+		if Acquire_Tile(New_Pos.X, New_Pos.Y) {
+			Release_Tile(t.Traveler.Position.X, t.Traveler.Position.Y)
+			t.Traveler.Position = New_Pos
+			t.Time_Stamp = time.Since(Start_Time)
+			t.Store_Trace()
+		} else {
+			t.Traveler.Symbol = rune(strings.ToLower(string(t.Traveler.Symbol))[0])
+			t.Time_Stamp = time.Since(Start_Time)
+			t.Store_Trace()
+			printerChan <- t.Traces
+			defer Wait_for_Finish.Done()
+			return
+		}
 
 	}
 	// When finished, send the report to the Printer.
@@ -150,26 +198,8 @@ func (t *Traveler_Task_Type) Start(printerChan chan Traces_Sequence_Type, Wait_f
 	defer Wait_for_Finish.Done() // Mark the task as done. Defer waits for func to complete
 }
 
-func (t *Traveler_Task_Type) Make_Step() {
-	N := int(4.0 * rand.Float64()) // Generate a random number between 0 and 3
-
-	switch N {
-	case 0:
-		Move_Up(&t.Traveler.Position)
-	case 1:
-		Move_Down(&t.Traveler.Position)
-	case 2:
-		Move_Left(&t.Traveler.Position)
-	case 3:
-		Move_Right(&t.Traveler.Position)
-	default:
-		fmt.Printf(" ?????????????? %d\n", N)
-	}
-}
-
 func (t *Traveler_Task_Type) Store_Trace() {
 	t.Traces.Last++
-	//fmt.Printf("%c %d\t", t.Traveler.Symbol, t.Traces.Last)
 	t.Traces.Trace_Array[t.Traces.Last] = Trace_Type{
 		Time_Stamp: t.Time_Stamp,
 		Id:         t.Traveler.Id,
@@ -179,6 +209,8 @@ func (t *Traveler_Task_Type) Store_Trace() {
 }
 
 func main() {
+	Init_Board()
+
 	var Travel_Tasks [Nr_Of_Travelers]Traveler_Task_Type
 	var Symbol rune = 'A'
 

@@ -1,7 +1,11 @@
+*
+!/**/
+!*.*
 **/.idea
 **/cmake-build-debug
 **/.vscode
 **/.venv
+**/.git
 *.exe
 *.o
 *.ali
