@@ -1,6 +1,9 @@
+//zmienna, mixin, zagniezdzenia, extend
+//sass mystyle.scss styledev.css --style=expanded
+//sass mystyle.scss style.css --style=compressed
 $catchy-color: #135e96;
 
-@mixin prepare-back($left, $width) {
+@mixin prepare-back($left, $width) { // mixin
     content: "";
     position: fixed;
     top: 0;
@@ -92,7 +95,12 @@ img {
     border-bottom-left-radius: 20px;
 }
 
-a { color: rgba(0, 218, 11, 0.89);}
+a { //zagniezdzenie selektorow
+    color: red;
+    &:hover, &:focus {
+        color: $catchy-color;
+    }
+}
 
 @media (max-width: 700px) {
     main{
@@ -118,7 +126,7 @@ a { color: rgba(0, 218, 11, 0.89);}
     #myBash{ width:100%; }
 }
 
-#topnav {
+#topnav { // zagniezdzanie selektorow
     position: sticky;
     top: 0;
     z-index: 100;
