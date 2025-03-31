@@ -1,7 +1,10 @@
-//zmienna, mixin, zagniezdzenia, extend
-//sass mystyle.scss styledev.css --style=expanded
-//sass mystyle.scss style.css --style=compressed
-$catchy-color: #135e96;
+//zmienna, mixin, zagniezdzenia, for loop, list, extend
+//sass mystyle.scss styledev.css --style=expanded #135e96;
+//sass mystyle.scss style.css --style=compressed 
+@use "sass:list";
+$catchy-color: rgb(0, 153, 255);
+$mustard-color: rgb(255, 187, 0);
+$rasberry-color: rgb(255, 0, 64);
 
 @mixin prepare-back($left, $width) { // mixin
     content: "";
@@ -82,7 +85,7 @@ hr {
     width: 100%;
     height: 1px;
     border: none;
-    background-color: black;
+    background-color: $rasberry-color;
 }
 
 img {
@@ -96,9 +99,9 @@ img {
 }
 
 a { //zagniezdzenie selektorow
-    color: red;
+    color: $mustard-color;
     &:hover, &:focus {
-        color: $catchy-color;
+        color: $rasberry-color;
     }
 }
 
@@ -143,8 +146,14 @@ a { //zagniezdzenie selektorow
         text-decoration: none;
         font-size: 17px;
     }
-    a:hover {
-        background-color: $catchy-color;
+
+    // lista + logika i interpolacja (#{$i}
+    $colors: $catchy-color, $mustard-color, $rasberry-color;
+    @for $i from 1 through 3 {
+        #hyper#{$i}:hover {
+            color: black;
+            background-color: list.nth($colors, $i);
+        }
     }
 }
 
@@ -162,7 +171,7 @@ a { //zagniezdzenie selektorow
 
 footer {
     background-color: $catchy-color;
-    color: white;
+    color: #f2f2f2;
     text-align: center;
     padding: 10px;
     width: 100%;
