@@ -6,6 +6,7 @@
 **/.vscode
 **/.venv
 **/.git
+**/__pycache__
 *.exe
 *.o
 *.ali
