@@ -45,8 +45,8 @@ void InsertSort(int *array, const int l, const int h) {
             j--;
         }
         moveInsert(array, j+1, key);
-        if(showSteps) display(array);
     }
+    if(showSteps) display(array);
 }
 
 int partition(int *array, int low, int high) //Hoare Partition
@@ -70,7 +70,7 @@ int partition(int *array, int low, int high) //Hoare Partition
         swapPos(array, i, j);
     }
 
-    //if(showSteps) display(array);
+    if(showSteps) display(array);
     return j;
 }
 
@@ -130,9 +130,7 @@ int main()
 
     cout << "Array is indeed sorted\n";
 
-
-
-    
+    /*
     //Code for saving data
     showSteps = false;
     std::ofstream file("data/hybridSortData.txt"); // Open in append mode
@@ -181,7 +179,7 @@ int main()
     }
         
     file.close();
-    file2.close();
+    file2.close();*/
     
     
     return 0;

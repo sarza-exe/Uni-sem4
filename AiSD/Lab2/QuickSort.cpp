@@ -108,31 +108,6 @@ int main()
 
     cout << "Array is indeed sorted\n";
 
-
-    showSteps = false;
-    random_device rd;
-    mt19937 rng(rd());
-    cout << "QuickSORT\n";
-    for(int i = 1; i <= 20; i ++)
-    {
-        int arr[i];
-        uniform_int_distribution<int> bin(0, 2*i-1);
-        int averageC = 0;
-        int averageM = 0;
-        for(int k = 0; k < 100; k++) // repeat 100 times
-        {
-            comparisons = 0;
-            swaps = 0;
-            for (int j = 0; j < i; j++) {
-                arr[j] = bin(rng);
-            }
-            QuickSort(arr, 0, i-1);
-            averageC += comparisons;
-            averageM += swaps;
-        }   
-        cout << "i = " << i << " avgC = " << averageC/100 << " avgM = " << averageM/100 << "\n";    
-    }
-
     /*
     //code for saving data
     showSteps = false;
