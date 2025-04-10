@@ -69,6 +69,8 @@ void Merge(int *arr, int low, int mid, int high)
     for (int i = low; i <= high; i++) {
         move(arr, i, temp[i-low]);
     }
+
+    if(showSteps) display(arr);
 }
 
 void MergeSort(int *array, const int low, const int high) 

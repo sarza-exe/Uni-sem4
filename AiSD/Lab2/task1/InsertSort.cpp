@@ -84,7 +84,6 @@ int main()
 
     cout << "Array is indeed sorted\n";
 
-    
     /*
     //code for saving data
     showSteps = false;

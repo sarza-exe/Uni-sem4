@@ -7,7 +7,7 @@
 using namespace std;
 
 int comparisons = 0;
-int moves = 0;
+int swaps = 0;
 bool showSteps = false;
 int n;
 
@@ -16,8 +16,8 @@ bool isBigger(const int a, const int b) {
     return a > b;
 }
 
-void move(int *array, const int i, const int j) {
-    moves += 3;
+void swapElements(int *array, const int i, const int j) {
+    swaps += 3;
     swap(array[i], array[j]);
 }
 
@@ -31,25 +31,29 @@ void display(int *array)
     cout << endl;
 }
 
-int partition(int *array, int low, int high)
+int partition(int *array, int low, int high) //Hoare Partition
 {
-    int pivot = array[high] ;
-    int i ,j;
-    j = low;
+    int pivot = array[low];
+    int i = low-1;
+    int j = high+1;
 
-    for (int i = low; i < high; i++)
+    while(true)
     {
-        if(isBigger(pivot, array[i]))
-        {
-            move(array, i, j);
-            j += 1;
-        }
+        do{ // from left find element >= than pivot
+            i++;
+        } while(isBigger(pivot, array[i])); //3 1 2 5 6 7 
+
+        do{ // from right find element <= than pivot
+            j--;
+        } while(isBigger(array[j], pivot)); 
+
+        if(i >= j) break;
+
+        swapElements(array, i, j);
     }
 
-    move(array, j, high);
     if(showSteps) display(array);
-
-    return j; 
+    return j;
 }
 
 void QuickSort(int *array, const int l, const int h) 
@@ -58,7 +62,7 @@ void QuickSort(int *array, const int l, const int h)
     {
         int pivot = partition(array, l, h);
 
-        QuickSort(array, l, pivot-1);
+        QuickSort(array, l, pivot);
         QuickSort(array, pivot+1, h);
     }
 }
@@ -91,7 +95,7 @@ int main()
     }
 
     cout << "Number of comparisons: " << comparisons << "\n";
-    cout << "Number of swaps: " << moves << "\n";
+    cout << "Number of swaps: " << swaps << "\n";
 
     for(int i = 0; i < n-1; i++)
     {
@@ -103,7 +107,6 @@ int main()
     }
 
     cout << "Array is indeed sorted\n";
-    
 
     /*
     //code for saving data
@@ -126,12 +129,12 @@ int main()
         for(int k = 0; k < 100; k++) // repeat 100 times
         {
             comparisons = 0;
-            moves = 0;
+            swaps = 0;
             for (int j = 0; j < i; j++) {
                 arr[j] = bin(rng);
             }
             QuickSort(arr, 0, i-1);
-            file << comparisons << " " << moves << " ";
+            file << comparisons << " " << swaps << " ";
         }   
         file << "\n";  
     }
@@ -143,12 +146,12 @@ int main()
         for(int k = 0; k < 100; k++) // repeat 100 times
         {
             comparisons = 0;
-            moves = 0;
+            swaps = 0;
             for (int j = 0; j < i; j++) {
                 arr[j] = bin(rng);
             }
             QuickSort(arr, 0, i-1);
-            file2 << comparisons << " " << moves << " ";
+            file2 << comparisons << " " << swaps << " ";
         }   
         file2 << "\n";  
     }

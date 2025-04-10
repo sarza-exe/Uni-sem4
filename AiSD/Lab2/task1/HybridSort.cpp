@@ -45,41 +45,45 @@ void InsertSort(int *array, const int l, const int h) {
             j--;
         }
         moveInsert(array, j+1, key);
-        if(showSteps) display(array);
     }
+    if(showSteps) display(array);
 }
 
-int partition(int *array, int low, int high)
+int partition(int *array, int low, int high) //Hoare Partition
 {
-    int pivot = array[high] ;
-    int i ,j;
-    j = low;
+    int pivot = array[low];
+    int i = low-1;
+    int j = high+1;
 
-    for (int i = low; i < high; i++)
+    while(true)
     {
-        if(isBigger(pivot, array[i]))
-        {
-            swapPos(array, i, j);
-            j += 1;
-        }
+        do{ // from left find element >= than pivot
+            i++;
+        } while(isBigger(pivot, array[i])); //3 1 2 5 6 7 
+
+        do{ // from right find element <= than pivot
+            j--;
+        } while(isBigger(array[j], pivot)); 
+
+        if(i >= j) break;
+
+        swapPos(array, i, j);
     }
 
-    swapPos(array, j, high);
     if(showSteps) display(array);
-
-    return j; 
+    return j;
 }
 
 void HybridSort(int *array, const int l, const int h) 
 {
-    if ((h-l) > 16)
+    if ((h-l) > 17)
     {
         int pivot = partition(array, l, h);
 
-        HybridSort(array, l, pivot-1);
+        HybridSort(array, l, pivot);
         HybridSort(array, pivot+1, h);
     }
-    else // for n <= 17
+    else // for n <= 18
     {
         InsertSort(array, l, h);
     }
@@ -125,8 +129,6 @@ int main()
     }
 
     cout << "Array is indeed sorted\n";
-
-
 
     /*
     //Code for saving data
@@ -177,8 +179,8 @@ int main()
     }
         
     file.close();
-    file2.close();
-    */
+    file2.close();*/
+    
     
     return 0;
 }

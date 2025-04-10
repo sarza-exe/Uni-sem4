@@ -45,6 +45,6 @@ for i in range(10):
         print(f"| {arr[index]} ", end='')
         index += 1
 
-print("Accuracy is", correct/30)
+print("Accuracy is", correct/total)
 
 
