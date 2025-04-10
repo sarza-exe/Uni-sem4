@@ -30,55 +30,6 @@ procedure Ex1 is
       Y : Integer range 0 .. Board_Height - 1;
    end record;
 
-   task type Tile is
-      entry Try_Acquire(Success : out Boolean); -- Procedure doesn't block. Used for initial position
-      entry Acquire(Success : out Boolean);       -- Entry will block until tile becomes unoccupied
-      entry Release;
-      entry Stop;
-   end Tile;
-
-   task body Tile is
-      Occupied : Boolean := False;
-      Exit_Task : Boolean := False;
-   begin
-      loop
-         select
-            accept Try_Acquire (Success : out Boolean) do
-               if not Occupied then
-                  Occupied := True;
-                  Success := True;
-               else
-                  Success := False;
-               end if;
-            end Try_Acquire;
-         or
-            accept Acquire (Success : out Boolean) do
-               if not Occupied then
-                  Occupied := True;
-                  Success := True;
-               else
-                  select
-                        accept Release;
-                  or
-                        delay Max_Delay;
-                        Success := False;
-                  end select;
-               end if;
-            end Acquire;
-         or
-            accept Release do
-               Occupied := False;
-            end Release;
-         or
-            accept Stop do
-               Exit_Task := True;
-            end Stop;
-         end select;
-         exit when Exit_Task;
-      end loop;
-   end Tile;
-
-   Board : array(0 .. Board_Width - 1, 0 .. Board_Height - 1) of Tile;
 
    -- traces of travelers
    type Trace_Type is record
@@ -114,6 +65,116 @@ procedure Ex1 is
       end loop;
    end Print_Traces;
 
+   protected type Counter_Type is
+      procedure Increment;
+      procedure Decrement;
+      function Get_Count return Natural;
+   private
+      Count : Natural := Nr_Of_Travelers;
+   end Counter_Type;
+
+   protected body Counter_Type is
+      procedure Increment is
+      begin
+         Count := Count + 1;
+      end Increment;
+
+      procedure Decrement is
+      begin
+         if Count > 0 then
+            Count := Count - 1;
+         end if;
+      end Decrement;
+
+      function Get_Count return Natural is
+      begin
+         return Count;
+      end Get_Count;
+   end Counter_Type;
+
+   Agent_Counter : Counter_Type; -- Globalna instancja licznika
+   
+   -- wild tenant
+   type Wild_Tenant_Type is record
+      Id       : Integer;
+      Symbol   : Character;
+      Position : Position_Type;
+   end record;
+
+   task type Tile is
+      entry Init(X : Integer; Y : Integer; Id : Integer);
+      entry Try_Acquire(Success : out Boolean); -- Procedure doesn't block. Used for initial position
+      entry Acquire(Success : out Boolean);       -- Entry will block until tile becomes unoccupied
+      entry Release;
+      entry Stop;
+   end Tile;
+
+   task body Tile is
+      Occupied : Boolean := False;
+      Exit_Task : Boolean := False;
+      Wild_Tenant : Wild_Tenant_Type;
+      Time_Stamp : Duration;
+      Traces     : Traces_Sequence_Type;
+      G          : Generator;
+
+      procedure Store_Trace is
+      begin
+         Traces.Last := Traces.Last + 1;
+         Traces.Trace_Array(Traces.Last) := (
+            Time_Stamp => Time_Stamp,
+            Id         => Wild_Tenant.Id,
+            Position   => Wild_Tenant.Position,
+            Symbol     => Wild_Tenant.Symbol
+         );
+      end Store_Trace;
+
+   begin
+      -- [accept Init do <code> end Init] synchronizes with main.
+      -- So main stops until accept do... end block finished
+      accept Init(X : Integer; Y : Integer; Id : Integer) do
+         Wild_Tenant.Position.X := X;
+         Wild_Tenant.Position.Y := Y;
+         Wild_Tenant.Id := Id;
+         Reset(G, -Id);
+         Wild_Tenant.Symbol := Character'Val(Character'Pos('0') + Integer(Float'Floor(10.0 * Random(G))));
+         --Time_Stamp := To_Duration(Clock - Start_Time); -- reads global clock
+      end Init;
+
+      loop
+         select
+            accept Try_Acquire (Success : out Boolean) do
+               if not Occupied then
+                  Occupied := True;
+                  Success := True;
+               else
+                  Success := False;
+               end if;
+            end Try_Acquire;
+         or
+            accept Acquire (Success : out Boolean) do
+               select
+                  Occupied := True; --AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                  Success := True;
+               or
+                  delay Max_Delay;
+                  Success := False;
+               end select;
+            end Acquire;
+         or
+            accept Release do
+               Occupied := False;
+            end Release;
+         or
+            accept Stop do
+               Exit_Task := True;
+            end Stop;
+         end select;
+         exit when Exit_Task;
+      end loop;
+   end Tile;
+
+   Board : array(0 .. Board_Width - 1, 0 .. Board_Height - 1) of Tile;
+
    -- task Printer collects and prints reports of traces
    task Printer is
       entry Report(Traces : Traces_Sequence_Type);
@@ -121,10 +182,11 @@ procedure Ex1 is
 
    task body Printer is
    begin
-      for I in 1 .. Nr_Of_Travelers loop -- range for TESTS !!!
+      while Agent_Counter.Get_Count > 0 loop
          accept Report(Traces : Traces_Sequence_Type) do -- it's not in order. It just waits until every thread has requested print
-            Print_Traces(Traces);
+               Print_Traces(Traces);
          end Report;
+         Agent_Counter.Decrement;
       end loop;
 
       for I in Board'Range(1) loop
@@ -135,116 +197,120 @@ procedure Ex1 is
    end Printer;
 
    -- travelers
-   type Traveler_Type is record
-      Id       : Integer;
-      Symbol   : Character;
-      Position : Position_Type;
-   end record;
+  type Traveler_Type is record
+    Id: Integer;
+    Symbol: Character;
+    Position: Position_Type;    
+  end record;
 
    -- task type is a type of task that must be declared
    -- task would just start. https://learn.adacore.com/courses/intro-to-ada/chapters/tasking.html#tasks
-   task type Traveler_Task_Type is
-      entry Init(Id : Integer; Seed : Integer; Symbol : Character);
-      entry Start;
-   end Traveler_Task_Type;
+  task type Traveler_Task_Type is	
+    entry Init(Id: Integer; Seed: Integer; Symbol: Character);
+    entry Start;
+  end Traveler_Task_Type;	
 
-   task body Traveler_Task_Type is
-      G          : Generator;
-      Traveler   : Traveler_Type;
-      Time_Stamp : Duration;
-      Nr_of_Steps : Integer;
-      Traces     : Traces_Sequence_Type;
+  task body Traveler_Task_Type is
+    G : Generator;
+    Traveler : Traveler_Type;
+    Time_Stamp : Duration;
+    Nr_of_Steps: Integer;
+    Traces: Traces_Sequence_Type; 
 
-      procedure Store_Trace is
+    procedure Store_Trace is
+    begin  
+      Traces.Last := Traces.Last + 1;
+      Traces.Trace_Array( Traces.Last ) := ( 
+          Time_Stamp => Time_Stamp,
+          Id => Traveler.Id,
+          Position => Traveler.Position,
+          Symbol => Traveler.Symbol
+        );
+    end Store_Trace;
+
+  begin
+    -- [accept Init do <code> end Init] synchronizes with main. 
+    -- So main stops until accept do... end block finished
+    accept Init(Id: Integer; Seed: Integer; Symbol: Character) do
+      Reset(G, Seed); 
+      Traveler.Id := Id;
+      Traveler.Symbol := Symbol;
+      -- Choose random position on board until you find one that's unoccupied
+      declare
+        Success : Boolean;
+        Pos     : Position_Type;
       begin
-         Traces.Last := Traces.Last + 1;
-         Traces.Trace_Array(Traces.Last) := (
-            Time_Stamp => Time_Stamp,
-            Id         => Traveler.Id,
-            Position   => Traveler.Position,
-            Symbol     => Traveler.Symbol
-         );
-      end Store_Trace;
+        loop
+            Pos.X := Integer( Float'Floor( Float( Board_Width )  * Random(G) ) );
+            Pos.Y := Integer( Float'Floor( Float( Board_Height ) * Random(G) ) );
+            Board(Pos.X, Pos.Y).Try_Acquire(Success);  -- Try to acquire the cell at this position.
+            if Success then
+              Traveler.Position := Pos; -- Successfully acquired the cell.
+              exit;  -- exit the loop once a free cell is found.
+            end if;
+        end loop;
+      end;
+      -- Store starting position
+      Store_Trace; 
+      Nr_of_Steps := Min_Steps + Integer( Float(Max_Steps - Min_Steps) * Random(G));
+      -- Time_Stamp of initialization
+      Time_Stamp := To_Duration ( Clock - Start_Time ); -- reads global clock
+    end Init;
+    
+    -- wait for initialisations of the remaining tasks:
+    -- It ensures every Init block in other tasks is finished
+    accept Start do
+      null;
+    end Start;
 
-   begin
-      -- [accept Init do <code> end Init] synchronizes with main.
-      -- So main stops until accept do... end block finished
-      accept Init(Id : Integer; Seed : Integer; Symbol : Character) do
-         Reset(G, Seed);
-         Traveler.Id := Id;
-         Traveler.Symbol := Symbol;
-         -- Choose random position on board until you find one that's unoccupied
-         declare
-            Success : Boolean;
-            Pos     : Position_Type;
-         begin
-            loop
-               Pos.X := Integer(Float'Floor(Float(Board_Width) * Random(G)));
-               Pos.Y := Integer(Float'Floor(Float(Board_Height) * Random(G)));
-               Board(Pos.X, Pos.Y).Try_Acquire(Success); -- Try to acquire the cell at this position.
-               if Success then
-                  Traveler.Position := Pos; -- Successfully acquired the cell.
-                  exit;                     -- exit the loop once a free cell is found.
-               end if;
-            end loop;
-         end;
-         -- Store starting position
-         Store_Trace;
-         Nr_of_Steps := Min_Steps + Integer(Float(Max_Steps - Min_Steps) * Random(G));
-         -- Time_Stamp of initialization
-         Time_Stamp := To_Duration(Clock - Start_Time); -- reads global clock
-      end Init;
-
-      -- wait for initialisations of the remaining tasks:
-      -- It ensures every Init block in other tasks is finished
-      accept Start do
-         null;
-      end Start;
-
-      -- it first makes all the steps noting it in Store_Trace
-      -- then sends traces to printer.report
-      Deadlock_Check : for Step in 0 .. Nr_of_Steps loop
-         delay Min_Delay + (Max_Delay - Min_Delay) * Duration(Random(G));
-         -- do action ...
-         declare
-            Success : Boolean;
-            New_Pos : Position_Type;
-            N       : Integer;
-         begin
-            N := Integer(Float'Floor(4.0 * Random(G)));
-            New_Pos.Y := Traveler.Position.Y;
-            New_Pos.X := Traveler.Position.X;
-            case N is
-               when 0 =>
-                  New_Pos.Y := (Traveler.Position.Y + Board_Height - 1) mod Board_Height;
-               when 1 =>
-                  New_Pos.Y := (Traveler.Position.Y + 1) mod Board_Height;
-               when 2 =>
-                  New_Pos.X := (Traveler.Position.X + Board_Width - 1) mod Board_Width;
-               when 3 =>
-                  New_Pos.X := (Traveler.Position.X + 1) mod Board_Width;
-               when others =>
-                  Put_Line(" ?????????????? " & Integer'Image(N));
-            end case;
-
-            -- Try to acquire the tile. Rendezvous sychronizes traveler with tile
+    -- it first makes all the steps noting it in Store_Trace
+    -- then sends traces to printer.report
+    Deadlock_Check:
+    for Step in 0 .. Nr_of_Steps loop
+      delay Min_Delay+(Max_Delay-Min_Delay)*Duration(Random(G));
+      -- do action ...
+      declare
+        Success : Boolean;
+        New_Pos : Position_Type;
+        N       : Integer;
+      begin
+        N := Integer( Float'Floor(4.0 * Random(G)) );   
+        New_Pos.Y := Traveler.Position.Y;
+        New_Pos.X := Traveler.Position.X; 
+        case N is
+        when 0 =>
+          New_Pos.Y := ( Traveler.Position.Y + Board_Height - 1 ) mod Board_Height;
+        when 1 =>
+          New_Pos.Y := ( Traveler.Position.Y + 1 ) mod Board_Height;
+        when 2 =>
+          New_Pos.X := ( Traveler.Position.X + Board_Width - 1 ) mod Board_Width;
+        when 3 =>
+          New_Pos.X := ( Traveler.Position.X + 1 ) mod Board_Width;
+        when others =>
+          Put_Line( " ?????????????? " & Integer'Image( N ) );
+        end case;
+        select
+            -- Try to acquire the tile
             Board(New_Pos.X, New_Pos.Y).Acquire(Success);
             if Success then
-               -- Release the tile when the traveler is leaving
-               Board(Traveler.Position.X, Traveler.Position.Y).Release;
-               -- Commit the move
-               Traveler.Position := New_Pos;
-            else
-               Traveler.Symbol := Character'Val(Character'Pos(Traveler.Symbol) + 32);
-               Store_Trace;
-               exit Deadlock_Check;
+              -- Release the tile when the traveler is leaving
+              Board(Traveler.Position.X, Traveler.Position.Y).Release;
+              -- Commit the move
+              Traveler.Position := New_Pos;
             end if;
-         end;
-         Store_Trace;
-         Time_Stamp := To_Duration(Clock - Start_Time);
-      end loop Deadlock_Check;
-      Printer.Report(Traces);
-   end Traveler_Task_Type;
+        or
+            delay Max_Delay; -- Timeout for potential deadlock
+            -- Change symbol to lowercase and exit loop
+            Traveler.Symbol := Character'Val(Character'Pos(Traveler.Symbol) + 32);
+            Store_Trace;
+            exit Deadlock_Check;
+        end select;
+      end;
+      Store_Trace;
+      Time_Stamp := To_Duration ( Clock - Start_Time );
+    end loop Deadlock_Check;
+    Printer.Report( Traces );
+  end Traveler_Task_Type;
 
    -- local for main task
    Travel_Tasks : array(0 .. Nr_Of_Travelers - 1) of Traveler_Task_Type; -- for tests
@@ -258,6 +324,12 @@ begin -- beginning of MAIN
       Integer'Image(Board_Width) & " " &
       Integer'Image(Board_Height)
    );
+
+   for I in Board'Range(1) loop
+         for J in Board'Range(2) loop
+            Board(I, J).Init(I, J, -(I * Board_Width + J + 1)); -- ID ranges from -1 to -225
+         end loop;
+      end loop;
 
    -- init travelers tasks
    for I in Travel_Tasks'Range loop
