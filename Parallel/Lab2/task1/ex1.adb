@@ -152,13 +152,19 @@ procedure Ex1 is
             end Try_Acquire;
          or
             accept Acquire (Success : out Boolean) do
-               select
-                  Occupied := True; --AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                  Success := True;
-               or
-                  delay Max_Delay;
-                  Success := False;
-               end select;
+               if not Occupied then
+                   Occupied := True;
+                   Success := True;
+                else
+                   select
+                        accept Release;
+                        Occupied := True;
+                        Success := True;
+                   or
+                         delay Max_Delay;
+                         Success := False;
+                   end select;
+                end if;
             end Acquire;
          or
             accept Release do
@@ -289,22 +295,21 @@ procedure Ex1 is
         when others =>
           Put_Line( " ?????????????? " & Integer'Image( N ) );
         end case;
-        select
-            -- Try to acquire the tile
-            Board(New_Pos.X, New_Pos.Y).Acquire(Success);
-            if Success then
+
+         -- Try to acquire the tile
+         Board(New_Pos.X, New_Pos.Y).Acquire(Success);
+         if Success then
               -- Release the tile when the traveler is leaving
               Board(Traveler.Position.X, Traveler.Position.Y).Release;
               -- Commit the move
               Traveler.Position := New_Pos;
-            end if;
-        or
-            delay Max_Delay; -- Timeout for potential deadlock
+         else
             -- Change symbol to lowercase and exit loop
             Traveler.Symbol := Character'Val(Character'Pos(Traveler.Symbol) + 32);
             Store_Trace;
             exit Deadlock_Check;
-        end select;
+         end if;
+
       end;
       Store_Trace;
       Time_Stamp := To_Duration ( Clock - Start_Time );
