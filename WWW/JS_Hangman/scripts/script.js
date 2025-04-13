@@ -65,6 +65,7 @@ function init() {
     answer = "";
     life = 10;
     wordDisplay = [];
+    winningCheck = "";
     context.clearRect(0, 0, 400, 400);
     canvas();
     livesDisplay.innerHTML = 'You have 10 lives left!';
@@ -86,6 +87,8 @@ function guess(event) {
     const guessWord = event.target.id;
     const answerArray = answer.split("");
     var counter = 0;
+    console.log(answer);
+    console.log(winningCheck);
     if (answer === winningCheck) {
       livesDisplay.innerHTML = `YOU WIN!`;
       return;
