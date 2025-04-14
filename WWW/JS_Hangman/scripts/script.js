@@ -14,10 +14,7 @@ function generateAlphabet() {
     var buttonsHTML = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")
       .map(
         (letter) =>
-          `<button
-           class = "alphabetButtonJS" 
-           id="${letter}"
-           >
+          `<button class = "alphabetButtonJS" id="${letter}">
           ${letter}
           </button>`
       ).join("");
@@ -38,7 +35,13 @@ const words = [
     "RAINBOW",
     "ALIEN",
     "SPHINX",
-    "TORCH"
+    "TORCH",
+    "DOOR",
+    "HALF-LIFE",
+    "ORANGES",
+    "LADYBUG",
+    "GIRL",
+    "SIX-PACK"
 ];
 
 function setAnswer() {
@@ -81,6 +84,11 @@ buttonReset.addEventListener("click", init);
 
 //guess click
 function guess(event) {
+    // Only proceed if a button was clicked
+    if (event.target.nodeName !== "BUTTON") {
+      return;
+    }
+
     // Disable the button so that it can only be clicked once
     event.target.disabled = true;
 

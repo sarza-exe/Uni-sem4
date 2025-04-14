@@ -101,22 +101,8 @@ procedure Ex1 is
       Position : Position_Type;
    end record;
 
-   task type Tile is
-      entry Init(X : Integer; Y : Integer; Id : Integer);
-      entry Try_Acquire(Success : out Boolean); -- Procedure doesn't block. Used for initial position
-      entry Acquire(Success : out Boolean);       -- Entry will block until tile becomes unoccupied
-      entry Release;
-      entry Stop;
-   end Tile;
-
-   task body Tile is
-      Occupied : Boolean := False;
-      Exit_Task : Boolean := False;
-      Wild_Tenant : Wild_Tenant_Type;
-      Time_Stamp : Duration;
-      Traces     : Traces_Sequence_Type;
-      G          : Generator;
-
+   task type Wild_Tenant_Task_Type (Initial_X, Initial_Y : Integer; Life_Time : Duration);
+   task body Wild_Tenant_Task_Type is
       procedure Store_Trace is
       begin
          Traces.Last := Traces.Last + 1;
@@ -127,6 +113,56 @@ procedure Ex1 is
             Symbol     => Wild_Tenant.Symbol
          );
       end Store_Trace;
+   begin
+         -- Inicjalizacja pozycji przy starcie zadania
+      Wild_Tenant.Position.X := Initial_X;
+      Wild_Tenant.Position.Y := Initial_Y;
+      Store_Trace;  -- rejestracja początkowego stanu
+
+      -- Oprócz głównego czasu życia, lokator może reagować na zmianę pozycji.
+      declare
+         Next_Change : Boolean := False;
+      begin
+         -- Uruchamiamy równolegle timer wygaszenia
+         delay Life_Time;
+      exception
+         when others =>
+            null;
+      end;
+
+      -- Główna pętla zadania, która pozostaje otwarta na wywołania entry.
+      loop
+         select
+            -- Entry obsługująca zmianę pozycji Wild Tenant.
+            accept Change_Position (New_X, New_Y : in Integer) do
+               Wild_Tenant.Position.X := New_X;
+               Wild_Tenant.Position.Y := New_Y;
+               -- Każda zmiana pozycji skutkuje rejestracją śladu.
+               Store_Trace;
+            end Change_Position;
+         or
+            delay 0.0;  -- opcjonalnie, by nie blokować zadania, gdy nie przychodzi żadne żądanie
+         end select;
+
+         exit when false; -- lub w jakiś sposób zakończ zadanie, np. po przekroczeniu czasu życia
+      end loop;
+   end Wild_Tenant_Task_Type;
+
+   task type Tile is
+      entry Init(X : Integer; Y : Integer; Id : Integer);
+      entry Try_Acquire(Success : out Boolean); -- Procedure doesn't block. Used for initial position
+      entry Acquire(Success : out Boolean);       -- Entry will block until tile becomes unoccupied
+      entry Release;
+      entry Create_Wild_Tenant;
+      entry Stop;
+   end Tile;
+
+   task body Tile is
+      Occupied : Boolean := False;
+      Exit_Task : Boolean := False;
+      Wild_Tenant : Wild_Tenant_Type;
+      Traces     : Traces_Sequence_Type;
+      G          : Generator;
 
    begin
       -- [accept Init do <code> end Init] synchronizes with main.
@@ -170,6 +206,16 @@ procedure Ex1 is
             accept Release do
                Occupied := False;
             end Release;
+         or
+            accept Create_Wild_Tenant do
+               -- Utworzenie nowego zadania dzikiego lokatora
+               --if Wild_Tenant = null and Occupied = False then
+               --   Wild_Tenant := new Wild_Tenant_Task_Type'(Initial_X => Get_Tile_X,
+               --                                             Initial_Y => Get_Tile_Y,
+               --                                             Life_Time => 3 * Max_Delay);
+               --end if;
+               Put_Line ("XD");
+            end Create_Wild_Tenant;
          or
             accept Stop do
                Exit_Task := True;
