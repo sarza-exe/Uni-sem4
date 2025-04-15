@@ -1,228 +1,159 @@
-import networkx as nx
+from random import randint
 import numpy as np
 import random
-import matplotlib.pyplot as plt
+import networkx as nx
 
-# Ustawienia początkowe
-NUM_NODES = 20
-NUM_EDGES = 25  # musi być < 30, ale musi zapewnić spójność (drzewo ma 19 krawędzi)
-DENSITY_N = 0.2  # określa odsetek par węzłów, dla których będzie ruch
-MIN_N_VALUE = 1
-MAX_N_VALUE = 10
-PACKET_SIZE = 8000  # średnia wielkość pakietu m w bitach
-T_MAX = 0.5  # przykładowa wartość graniczna opóźnienia
-P_EDGE = 0.95  # prawdopodobieństwo nieuszkodzenia krawędzi
-NUM_TRIALS = 500  # liczba prób symulacyjnych
+m = 1000
 
+def generate_topology():
+    # Create an empty graph
+    G = nx.Graph()
 
-# Funkcja generująca spójny graf o zadanej liczbie wierzchołków i krawędzi
-def generate_graph(num_nodes, num_edges):
-    # Tworzymy drzewo rozpinające (spójny graf z num_nodes-1 krawędziami)
-    G = nx.generators.trees.random_tree(n=num_nodes)
-    G = nx.Graph(G)  # Konwersja na zwykły, niedukowany graf
-    # Dodajemy dodatkowe krawędzie losowo, zachowując warunek liczby krawędzi < num_edges
-    additional_edges = num_edges - (num_nodes - 1)
-    potential_edges = [(u, v) for u in G.nodes() for v in G.nodes() if u < v and not G.has_edge(u, v)]
-    random.shuffle(potential_edges)
-    for (u, v) in potential_edges[:additional_edges]:
-        G.add_edge(u, v)
+    # Add 20 nodes
+    G.add_nodes_from(range(1, 21))  # Nodes labeled 1 through 20
+
+    # Add fewer than 30 edges (here: 28 edges)
+    edges = [
+        (1, 2), (2, 3), (3, 4), (4, 5),
+        (5, 6), (6, 7), (7, 8), (8, 9),
+        (9, 10), (10, 1),  # Cycle of 10 nodes
+        (1, 11), (2, 12), (3, 13), (4, 14), (5, 15),
+        (6, 16), (7, 17), (8, 18), (9, 19), (10, 20),  # Spokes to outer nodes
+        (11, 12), (12, 13), (13, 14), (14, 15),
+        (15, 16), (16, 17), (17, 18), (18, 19)
+        # 10-cycle outer with one missing edge to stay under 30
+    ]
+
+    G.add_edges_from(edges)
     return G
 
+def get_N():
+    # Generate the matrix of packet intensities N where N[i][j] is the number of packets from node i to node j.
+    N = np.array([
+        [1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6],
+        [2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7],
+        [3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1],
+        [4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2],
+        [5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3],
+        [6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4],
+        [7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5],
+        [1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6],
+        [2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7],
+        [3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1],
+        [4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2],
+        [5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3],
+        [6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4],
+        [7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5],
+        [1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6],
+        [2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7],
+        [3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1],
+        [4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2],
+        [5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3],
+        [6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4]
+    ])
 
-# Funkcja generująca macierz natężeń N jako słownik {(i,j): n_ij}
-def generate_N(num_nodes, density, min_val, max_val):
-    N = {}
-    for i in range(num_nodes):
-        for j in range(num_nodes):
-            if i != j and random.random() < density:
-                N[(i, j)] = random.randint(min_val, max_val)
-            else:
-                N[(i, j)] = 0
+    for i in range(20):
+        N[i][i] = 0
+
     return N
 
+def calculate_a(G, N):
+    a = {e: 0.0 for e in G.edges}
 
-# Funkcja wyznaczająca przepływy na krawędziach zgodnie z macierzą N
-def compute_edge_flow(G, N):
-    # Używamy klucza jako uporządkowaną krotkę (min(u,v), max(u,v))
-    edge_flow = {tuple(sorted(e)): 0 for e in G.edges()}
-    # Dla każdej pary (i, j) z ruchem, obliczamy najkrótszą ścieżkę w grafie G
-    for (i, j), flow in N.items():
-        if flow > 0:
-            try:
-                path = nx.shortest_path(G, source=i, target=j)
-            except nx.NetworkXNoPath:
-                # Jeśli nie ma ścieżki, ruch nie jest realizowany
-                continue
-            # Dodajemy ruch do każdej krawędzi na wyznaczonej trasie
-            for k in range(len(path) - 1):
-                e = tuple(sorted((path[k], path[k + 1])))
-                edge_flow[e] += flow
-    return edge_flow
+    for i in range(len(N)):
+        for j in range(len(N)):
+            if i != j and N[i][j] > 0:
+                try:
+                    # Przyjmujemy najkrótszą ścieżkę jako trasę transmisji
+                    path = nx.shortest_path(G, source=i, target=j)
+                    # Dzielenie ruchu na poszczególne krawędzie ścieżki
+                    path_edges = list(zip(path[:-1], path[1:]))
+                    for e in path_edges:
+                        # Ujednolicamy reprezentację krawędzi (bez względu na kolejność węzłów)
+                        e_norm = tuple(sorted(e))
+                        if e_norm in a:
+                            a[e_norm] += N[i][j]
+                except nx.NetworkXNoPath:
+                    # Jeśli nie ma ścieżki, pomijamy tę parę
+                    continue
+    return a
 
+def calculate_c(G):
+    return {e: randint(900, 1100) * m for e in G.edges}
 
-# Funkcja przypisująca przepustowości do krawędzi - upewniamy się, że c(e) > a(e)
-def assign_capacity(edge_flow, slack_min=1000, slack_max=5000):
-    capacity = {}
-    for e, flow in edge_flow.items():
-        slack = random.randint(slack_min, slack_max)
-        capacity[e] = flow + slack  # zagwarantowane c(e) > a(e)
-    return capacity
-
-
-# Funkcja obliczająca opóźnienie T dla danej sieci
-def compute_delay(edge_flow, capacity, total_flow, packet_size):
-    total_delay = 0
-    for e in edge_flow:
-        a_e = edge_flow[e]
-        cap = capacity[e]
-        # Unikamy dzielenia przez zero – zakładamy, że cap > 0 i cap/m > a(e)
-        denominator = (cap / packet_size) - a_e
-        if denominator <= 0:
-            # W praktyce taka krawędź byłaby przeciążona – ustawiamy duże opóźnienie
-            delay = 1e6
-        else:
-            delay = a_e / denominator
-        total_delay += delay
-    T = total_delay / total_flow if total_flow > 0 else 1e6
+def compute_network_delay(G, N, c, a):
+    # Calculate total packet intensity
+    G_sum = np.sum(N)
+    # Compute delay sum using the formula (ensure division is proper)
+    delay_sum = sum(a.get(e, 0) / (c.get(e, 1) / m - a.get(e, 0)) for e in G.edges)
+    T = (1 / G_sum) * delay_sum
     return T
 
+def estimate_reliability(G, N, c, a, p, T_max, num_samples=1000):
+    for e in G.edges:
+        if (c.get(e) / m) < a.get(e):
+            return -1
 
-# Funkcja symulująca niezawodność sieci
-def simulate_reliability(G, N, capacity, p_edge, T_max, packet_size, num_trials):
-    successes = 0
-    total_flow = sum(N.values())
-    # Obliczamy oryginalny rozkład przepływu dla porównania – na pełnym grafie
-    base_edge_flow = compute_edge_flow(G, N)
+    count = 0
+    for _ in range(num_samples):
+        G_temp = G.copy()
+        for e in list(G.edges):
+            if random.random() > p:  # simulate edge failure
+                G_temp.remove_edge(*e)
+        if nx.is_connected(G_temp):
+            T = compute_network_delay(G_temp, N, c, a)
+            if T < T_max:
+                count += 1
+    return count / num_samples
 
-    for _ in range(num_trials):
-        # Losowo wybieramy, które krawędzie przetrwają
-        surviving_edges = [e for e in G.edges() if random.random() < p_edge]
-        H = nx.Graph()
-        H.add_nodes_from(G.nodes())
-        H.add_edges_from(surviving_edges)
-        # Sprawdź, czy graf przetrwał (jest spójny)
-        if not nx.is_connected(H):
-            continue  # symulacja niezaliczona
-        # Obliczamy przepływ w nowym (przetrwałym) grafie
-        trial_edge_flow = compute_edge_flow(H, N)
-        # Na podstawie przepustowości z oryginalnej topologii (przyjmujemy, że się nie zmieniają)
-        T_trial = compute_delay(trial_edge_flow, capacity, total_flow, packet_size)
-        if T_trial < T_max:
-            successes += 1
-    reliability = successes / num_trials
-    return reliability
+def run_experiments():
+    G = generate_topology()
+    N = get_N()
+    a = calculate_a(G, N)
+    c = calculate_c(G)
+    p, T_max = 0.95, 0.3
 
+    print("Eksperymenty dla różnych wartości N")
+    for scale in [1, 2, 3, 5]:
+        print("Original network delay:", compute_network_delay(G, N, c, a))
+        N_scaled = (N * scale).astype(int)
+        a_scaled = calculate_a(G, N_scaled)
+        print("Original network delay:", compute_network_delay(G, N, c, a))
+        reliability = estimate_reliability(G, N_scaled, c, a_scaled, p, T_max)
+        if reliability != -1:
+            print(f'N x {scale}, Reliability: {reliability}')
+        else:
+            print("dupadupadupadupa")
 
-# Funkcja eksperymentalna: skalowanie macierzy natężeń (wzrost ruchu)
-def experiment_scaling_N(G, N, capacity, p_edge, T_max, packet_size, num_trials, factors):
-    reliabilities = []
-    for factor in factors:
-        # Skaluje macierz N
-        N_scaled = {k: int(v * factor) for k, v in N.items()}
-        reliability = simulate_reliability(G, N_scaled, capacity, p_edge, T_max, packet_size, num_trials)
-        reliabilities.append(reliability)
-    return reliabilities
+    print("Eksperymenty dla różnych wartości c")
+    for scale in [1, 5, 10, 30]:
+        c_scaled = {e: int(c[e] * scale) for e in G.edges}
+        reliability = estimate_reliability(G, N, c_scaled, a, p, T_max)
+        if reliability != -1:
+            print(f'N x {scale}, Reliability: {reliability}')
+        else:
+            print("dupadupadupadupa")
 
+    print("Eksperymenty dla różnych topologii")
+    for extra_edges in [1, 5, 10, 30]:
+        new_edges = []
+        for _ in range(extra_edges):
+            u, v = random.randint(0, 19), random.randint(0, 19)
+            if u != v:
+                new_edges.append((u, v))
+        G_extended = G.copy()
+        G_extended.add_edges_from(new_edges)
+        # Adjust or initialize capacities and flows for extra edges
+        mean_capacity = int(np.mean(list(c.values())))
+        c_extended = {e: c.get(e, mean_capacity) for e in G_extended.edges}
+        # For new edges that do not have an assigned flow, we can set them randomly
+        a_extended = {tuple(sorted(e)): a.get(e, random.randint(1, c_extended[tuple(sorted(e))] // 2)) 
+                      for e in G_extended.edges}
+        reliability = estimate_reliability(G_extended, N, c_extended, a_extended, p, T_max)
+        if reliability != -1:
+            print(f'N x {scale}, Reliability: {reliability}')
+        else:
+            print("dupadupadupadupa")
 
-# Funkcja eksperymentalna: skalowanie przepustowości (zwiększenie marginesu)
-def experiment_scaling_capacity(G, N, capacity, p_edge, T_max, packet_size, num_trials, factors):
-    reliabilities = []
-    # Wyznaczamy przepływ na krawędziach dla oryginalnego N
-    base_edge_flow = compute_edge_flow(G, N)
-    for factor in factors:
-        # Skalujemy przepustowości – zwiększamy margines o czynnik factor
-        cap_scaled = {e: base_edge_flow[e] + factor * (capacity[e] - base_edge_flow[e]) for e in capacity}
-        reliability = simulate_reliability(G, N, cap_scaled, p_edge, T_max, packet_size, num_trials)
-        reliabilities.append(reliability)
-    return reliabilities
-
-
-# Funkcja eksperymentalna: stopniowe dodawanie nowych krawędzi do topologii
-def experiment_scaling_topology(G, N, capacity, p_edge, T_max, packet_size, num_trials, extra_edges_list):
-    reliabilities = []
-    # Lista krawędzi, których nie ma w G, które potencjalnie można dodać
-    potential_edges = [(u, v) for u in G.nodes() for v in G.nodes() if u < v and not G.has_edge(u, v)]
-    random.shuffle(potential_edges)
-    for extra_count in extra_edges_list:
-        # Tworzymy kopię oryginalnego grafu i dodajemy extra_count krawędzi
-        H = G.copy()
-        for e in potential_edges[:extra_count]:
-            H.add_edge(*e)
-        # Przeliczamy przepływ dla nowego grafu H
-        new_edge_flow = compute_edge_flow(H, N)
-        # Przyjmujemy, że dla nowych krawędzi przepustowości są obliczane analogicznie (dodajemy margines)
-        new_capacity = {}
-        for e in H.edges():
-            e_key = tuple(sorted(e))
-            # Jeśli krawędź była w oryginalnym grafie, użyjemy jej przepustowości; inaczej przypiszemy c = a(e) + slack
-            if e_key in capacity:
-                new_capacity[e_key] = capacity[e_key]
-            else:
-                slack = random.randint(1000, 5000)
-                new_capacity[e_key] = new_edge_flow[e_key] + slack
-        reliability = simulate_reliability(H, N, new_capacity, p_edge, T_max, packet_size, num_trials)
-        reliabilities.append(reliability)
-    return reliabilities
-
-
-# Główna część – generacja danych i przeprowadzenie eksperymentów
-if __name__ == '__main__':
-    # Generowanie grafu
-    G = generate_graph(NUM_NODES, NUM_EDGES)
-    print("Wygenerowany graf:", G.number_of_nodes(), "wierzchołków,", G.number_of_edges(), "krawędzi")
-
-    # Rysujemy wygenerowany graf
-    plt.figure(figsize=(6, 6))
-    pos = nx.spring_layout(G, seed=42)
-    nx.draw(G, pos, with_labels=True, node_color='lightblue', edge_color='gray')
-    plt.title("Topologia sieci G")
-    plt.show()
-
-    # Generujemy macierz natężeń N
-    N = generate_N(NUM_NODES, DENSITY_N, MIN_N_VALUE, MAX_N_VALUE)
-    total_N = sum(N.values())
-    print("Suma elementów N (całkowity ruch):", total_N)
-
-    # Wyznaczamy przepływy na krawędziach
-    base_edge_flow = compute_edge_flow(G, N)
-    # Przypisujemy przepustowości – gwarantujemy c(e) > a(e)
-    capacity = assign_capacity(base_edge_flow)
-
-    # Obliczamy opóźnienie dla oryginalnego, pełnego grafu
-    T_original = compute_delay(base_edge_flow, capacity, total_N, PACKET_SIZE)
-    print("Opóźnienie T (pełny graf):", T_original)
-
-    # Symulacja niezawodności przy ustalonych parametrach
-    reliability_base = simulate_reliability(G, N, capacity, P_EDGE, T_MAX, PACKET_SIZE, NUM_TRIALS)
-    print("Szacowana niezawodność (Pr[T < T_max]) przy ustawieniach bazowych:", reliability_base)
-
-    # Eksperyment 1: Stopniowe zwiększanie natężenia ruchu
-    factors = np.linspace(0.5, 2.0, 10)  # skaluje macierz N od 0.5x do 2x
-    reliability_N = experiment_scaling_N(G, N, capacity, P_EDGE, T_MAX, PACKET_SIZE, NUM_TRIALS, factors)
-    plt.plot(factors, reliability_N, marker='o')
-    plt.xlabel("Czynnik skalujący macierz N")
-    plt.ylabel("Niezawodność (Pr[T < T_max])")
-    plt.title("Wpływ zwiększenia ruchu na niezawodność")
-    plt.grid(True)
-    plt.show()
-
-    # Eksperyment 2: Stopniowe zwiększanie przepustowości (zmiana marginesu)
-    factors_cap = np.linspace(0.5, 2.0, 10)  # skaluje przepustowości
-    reliability_cap = experiment_scaling_capacity(G, N, capacity, P_EDGE, T_MAX, PACKET_SIZE, NUM_TRIALS, factors_cap)
-    plt.plot(factors_cap, reliability_cap, marker='o', color='green')
-    plt.xlabel("Czynnik skalujący przepustowość")
-    plt.ylabel("Niezawodność (Pr[T < T_max])")
-    plt.title("Wpływ zwiększenia przepustowości na niezawodność")
-    plt.grid(True)
-    plt.show()
-
-    # Eksperyment 3: Stopniowe dodawanie nowych krawędzi (zmiana topologii)
-    extra_edges_list = range(0, 11, 2)  # dodajemy od 0 do 10 krawędzi
-    reliability_topo = experiment_scaling_topology(G, N, capacity, P_EDGE, T_MAX, PACKET_SIZE, NUM_TRIALS,
-                                                   extra_edges_list)
-    plt.plot(list(extra_edges_list), reliability_topo, marker='o', color='red')
-    plt.xlabel("Liczba dodanych krawędzi")
-    plt.ylabel("Niezawodność (Pr[T < T_max])")
-    plt.title("Wpływ zmiany topologii na niezawodność")
-    plt.grid(True)
-    plt.show()
+if __name__ == "__main__":
+    run_experiments()

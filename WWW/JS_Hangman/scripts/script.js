@@ -4,10 +4,12 @@ var answer = "";
 var life = 10;
 var wordDisplay = [];
 var winningCheck = "";
+var guessedLetters = [];
 const buttonReset = document.getElementById("reset");
 const livesDisplay = document.getElementById("mylives");
 var stickmanCanvas = document.getElementById("stickman");
 var context = stickmanCanvas.getContext("2d");
+var loadState = true;
 
 //generate alphabet buttons
 function generateAlphabet() {
@@ -64,6 +66,34 @@ function generateAnswerDisplay(word) {
     return wordDisplay.join(" ");
 }
 
+
+function loadGameState() {
+  const savedState = localStorage.getItem('hangmanGame');
+  console.log(savedState);
+  if (savedState) {
+    const gameState = JSON.parse(savedState);
+    life = gameState.life;
+    wordDisplay = gameState.wordDisplay;
+    answer = gameState.answer;
+    guessedLetters = gameState.guessedLetters;
+    
+    // update interface
+    loadStateAnimate();
+    answerDisplay.innerHTML = wordDisplay.join(" ");
+    livesDisplay.innerHTML = life > 1 ? `You have ${life} lives!` : `You have ${life} life!`;
+    if(answer === wordDisplay.join("")) livesDisplay.innerHTML = "You Win!";
+
+    // select and disable gueassed letters
+    guessedLetters.forEach(letter => {
+      const button = document.getElementById(letter);
+      if (button) {
+        button.disabled = true;
+        button.classList.add("selected");
+      }
+    });
+  }
+}
+
 function init() {
     answer = "";
     life = 10;
@@ -75,12 +105,32 @@ function init() {
     setAnswer();
     alphabetContainer.innerHTML = generateAlphabet();
     alphabetContainer.addEventListener("click", handleLetterClick);
+    if(loadState) loadGameState();
+    loadState = true;
 }
 
 window.onload = init();
 
 //reset (play again)
-buttonReset.addEventListener("click", init);
+buttonReset.addEventListener("click", () => {
+  loadState = false;
+  guessedLetters = [];
+  localStorage.removeItem("hangmanGame");
+  init();
+} );
+
+function saveGameState(){
+  const gameState = {
+    life: life,
+    wordDisplay: wordDisplay,
+    answer: answer,
+    guessedLetters: guessedLetters  // przykładowo tablica klikniętych liter
+  };
+  
+  // Zapisywanie stanu gry
+  localStorage.setItem('hangmanGame', JSON.stringify(gameState));
+}
+
 
 //guess click
 function guess(event) {
@@ -99,12 +149,15 @@ function guess(event) {
     console.log(winningCheck);
     if (answer === winningCheck) {
       livesDisplay.innerHTML = `YOU WIN!`;
+      saveGameState(); //Wwwwwwin
       return;
     } else {
+      guessedLetters.push(guessWord);
       if (life > 0) {
         for (var j = 0; j < answer.length; j++) {
           if (guessWord === answerArray[j]) {
             wordDisplay[j] = guessWord;
+            localStorage.setItem("worddisplay", wordDisplay);
             console.log(guessWord);
             answerDisplay.innerHTML = wordDisplay.join(" ");
             winningCheck = wordDisplay.join("");
@@ -126,92 +179,39 @@ function guess(event) {
           livesDisplay.innerHTML = `GAME OVER!</p><p>The word was ${answer}</p>`;
         }
       } else {
+        saveGameState();
         return;
       }
       console.log(wordDisplay);
       if (answer === winningCheck) {
         livesDisplay.innerHTML = `YOU WIN!`;
+        saveGameState();
         return;
       }
     }
+    saveGameState();
   }
   
   alphabetContainer.addEventListener("click", guess);
 
+  
+  
+function loadStateAnimate() {
+  for (var i = 9; i >= life; i--)
+    drawArray[i]();
+}
 
 // Hangman
 function animate() {
-    drawArray[life]();
-    //console.log(drawArray[life]);
-  }
+  drawArray[life]();
+  //console.log(drawArray[life]);
+}
+
+function canvas() {
+  myStickman = document.getElementById("stickman");
+  context = myStickman.getContext("2d");
+  context.beginPath();
+  context.strokeStyle = "#fff";
+  context.lineWidth = 2;
+}
   
-  function canvas() {
-    myStickman = document.getElementById("stickman");
-    context = myStickman.getContext("2d");
-    context.beginPath();
-    context.strokeStyle = "#fff";
-    context.lineWidth = 2;
-  }
-  
-  function head() {
-    myStickman = document.getElementById("stickman");
-    context = myStickman.getContext("2d");
-    context.beginPath();
-    context.arc(60, 25, 10, 0, Math.PI * 2, true);
-    context.stroke();
-  }
-  
-  function draw($pathFromx, $pathFromy, $pathTox, $pathToy) {
-    context.moveTo($pathFromx, $pathFromy);
-    context.lineTo($pathTox, $pathToy);
-    context.stroke();
-  }
-  
-  function frame1() {
-    draw(0, 150, 150, 150);
-  }
-  
-  function frame2() {
-    draw(10, 0, 10, 600);
-  }
-  
-  function frame3() {
-    draw(0, 5, 70, 5);
-  }
-  
-  function frame4() {
-    draw(60, 5, 60, 15);
-  }
-  
-  function torso() {
-    draw(60, 36, 60, 70);
-  }
-  
-  function rightArm() {
-    draw(60, 46, 90, 55);
-  }
-  
-  function leftArm() {
-    draw(60, 46, 30, 55);
-  }
-  
-  function rightLeg() {
-    draw(60, 70, 90, 110);
-  }
-  
-  function leftLeg() {
-    draw(60, 70, 30, 110);
-  }
-  
-  var drawArray = [
-    rightLeg,
-    leftLeg,
-    rightArm,
-    leftArm,
-    torso,
-    head,
-    frame4,
-    frame3,
-    frame2,
-    frame1
-  ];
