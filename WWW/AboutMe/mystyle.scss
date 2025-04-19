@@ -68,19 +68,6 @@ pre,code
     border-radius: 10px;
 }
 
-#myBash
-{
-    border-radius: 10px;
-    background-color: #0e0e0e;
-    color: rgb(201, 201, 201);
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: bold;
-    overflow-x: auto;
-    white-space: pre;
-    display: block;
-    max-width: 100%;
-}
-
 hr {
     width: 100%;
     height: 1px;
@@ -126,7 +113,14 @@ a { //zagniezdzenie selektorow
     pre,code{ width: 100%;
         border-radius: 10px;}
 
-    #myBash{ width:100%; }
+    #topnav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    #topnav a {
+    width: 100%;   /* zajmują całą szerokość */
+    }
 }
 
 #topnav { // zagniezdzanie selektorow
@@ -168,6 +162,17 @@ a { //zagniezdzenie selektorow
     margin-right: 5px;
     width: auto;
 }
+
+
+#hamburger {
+    display: none;              /* domyślnie ukrywamy */
+    font-size: 24px;
+    background: none;
+    border: none;
+    color: #f2f2f2;
+    padding: 14px 10px;
+    cursor: pointer;
+  }
 
 footer {
     background-color: $catchy-color;
