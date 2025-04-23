@@ -1,7 +1,7 @@
+import numpy as np
 from check_solvability import is_solvable
-import random
 
-def pretty_print(state):
+def pretty_print(state: np.ndarray):
     print("- "*12)
     for row in state:
         for element in row :
@@ -12,40 +12,26 @@ def pretty_print(state):
                 print(" ",element," ", end="")
         print()
 
-def generate_default_goal(puzzle_size):
-    goal = []
-    x = 0
-    for i in range(puzzle_size):
-        line = []
-        for j in range(puzzle_size):
-            x += 1
-            if x == puzzle_size * puzzle_size : x = 0
-            line.append(x)
-        goal.append(line)
-    return goal
+def generate_default_goal(puzzle_size) -> np.ndarray:
+    n = puzzle_size * puzzle_size
+    # make [1,2,...,N^2], then set the last element to 0
+    goal = np.arange(1, n + 1, dtype=int)
+    goal[-1] = 0
+    return goal.reshape(puzzle_size, puzzle_size)
 
-def generate_puzzle(puzzle_size):
+def generate_puzzle(puzzle_size) -> np.ndarray:
     # Get the goal so we can grab all tiles except the blank
     goal = generate_default_goal(puzzle_size)
-    flat_tiles = [tile for row in goal for tile in row if tile != 0]
+    # get a copy of all non-zero tiles
+    flat_tiles = goal.flatten()
+    flat_tiles = flat_tiles[flat_tiles != 0].copy()
 
     while True:
-        # Shuffle the non‑zero tiles
-        random.shuffle(flat_tiles)
+        # shuffle in place
+        np.random.shuffle(flat_tiles)
+        # append the blank (0) and reshape back to N×N
+        arr = np.concatenate([flat_tiles, [0]])
+        state = arr.reshape(puzzle_size, puzzle_size)
 
-        # Rebuild the state row by row putting 0 explicitly in the bottom‑right corner
-        state = []
-        idx = 0
-        for i in range(puzzle_size):
-            row = []
-            for j in range(puzzle_size):
-                if i == puzzle_size - 1 and j == puzzle_size - 1:
-                    row.append(0)
-                else:
-                    row.append(flat_tiles[idx])
-                    idx += 1
-            state.append(row)
-
-        # Check if puzzle is solvable
         if is_solvable(state):
             return state

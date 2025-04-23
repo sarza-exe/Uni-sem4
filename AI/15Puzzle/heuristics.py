@@ -1,18 +1,14 @@
+import numpy as np
 
 # NO. misplaced tiles
-def hamming_heuristic(puzzle, goal):
-    size = len(puzzle)
-    misplaced = 0
-
-    for i in range(size):
-        for j in range(size):
-            if puzzle[i][j] != 0 and puzzle[i][j] != goal[i][j]:
-                misplaced += 1
-
-    return misplaced
+def hamming_heuristic(puzzle: np.ndarray, goal: np.ndarray):
+    # mask of non-blank tiles that differ from goal
+    misplaced = (puzzle != 0) & (puzzle != goal)
+    return int(np.sum(misplaced))
 
 # The sum of the distances from the tiles to their goal positions
-def manhattan_heuristic(puzzle, goal):
+def manhattan_heuristic(puzzle: np.ndarray, goal: np.ndarray):
+
     size = len(puzzle)
     # Build a map from tile value -> (goal_row, goal_col)
     goal_pos = {}

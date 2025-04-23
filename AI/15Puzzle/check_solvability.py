@@ -1,16 +1,12 @@
+import numpy as np
 # A utility program to check if 15 puzzle is solvable
-N = 4
 
 # A function to count inversions in given array
-def get_inv_count(arr):
-    arr1 = []
-    for y in arr:
-        for x in y:
-            arr1.append(x)
-    arr = arr1
+def get_inv_count(puzzle, size):
+    arr = puzzle.flatten()
     inv_count = 0
-    for i in range(N * N - 1):
-        for j in range(i + 1, N * N):
+    for i in range(size * size - 1):
+        for j in range(i + 1, size * size):
             # count pairs(arr[i], arr[j]) such that
             # i < j and arr[i] > arr[j]
             if arr[j] and arr[i] and arr[i] > arr[j]:
@@ -19,35 +15,35 @@ def get_inv_count(arr):
     return inv_count
 
 # find Position of blank from bottom
-def find_blank_pos(puzzle):
-    # start from bottom-right corner of matrix
-    for i in range(N - 1, -1, -1):
-        for j in range(N - 1, -1, -1):
-            if puzzle[i][j] == 0:
-                return N - i
+def find_blank_pos(puzzle: np.ndarray, size):
+    # find the row index of the blank
+    blank_row = np.where(puzzle == 0)[0][0]
+    # convert to distance from bottom
+    return size - blank_row
 
 # This function returns true if given instance of N*N - 1 puzzle is solvable
-def is_solvable(puzzle):
+def is_solvable(puzzle: np.ndarray):
+    size = puzzle.shape[0]
     # Count inversions in given puzzle
-    inv_count = get_inv_count(puzzle)
+    inv_count = get_inv_count(puzzle, size)
 
     # If grid is odd, return true if inversion count is even.
-    if N & 1:
-        return ~(inv_count & 1)
+    if size & 1:
+        return inv_count % 2 == 0
     else:  # grid is even
-        pos = find_blank_pos(puzzle)
+        pos = find_blank_pos(puzzle, size)
         if pos & 1:
-            return ~(inv_count & 1)
+            return inv_count % 2 == 0
         else:
-            return inv_count & 1
+            return inv_count % 2 != 0
 
 
-# puzzle = [
+# puzzle1 = np.array([
 #     [3, 9, 1, 15, ],
 #     [14, 11, 4, 6, ],
 #     [13, 5, 10, 12, ],  # Value 0 is used for empty space
-#     [2, 7, 8, 0, ], ]
+#     [2, 7, 8, 0, ], ])
 #
-# print("Solvable") if is_solvable(puzzle) else print("Not Solvable")
+# print("Solvable") if is_solvable(puzzle1) else print("Not Solvable")
 
 # ctrl + / to comment
