@@ -1,5 +1,4 @@
 import numpy as np
-import math
 import heapq
 from check_solvability import is_solvable
 from puzzle import pretty_print
@@ -21,7 +20,7 @@ class Board:
 # return a list of all boards reachable in one move.
 def get_neighbours(board: np.ndarray):
     size = board.shape[0]
-    # find the blank’s (row, col)
+    # find the pos of blank
     i, j = np.argwhere(board == 0)[0]
 
     neighbours = []
@@ -34,19 +33,8 @@ def get_neighbours(board: np.ndarray):
             # swap blank with neighbour
             new_board[i, j], new_board[ni, nj] = new_board[ni, nj], new_board[i, j]
             neighbours.append(new_board)
-
     return neighbours
 
-
-
-def is_in_closed(neighbour: np.ndarray, closed_list):
-    return any(np.array_equal(neighbour, closed) for closed in closed_list)
-
-def find_in_open(board: np.ndarray, lst) -> Board | None:
-    return next(
-        (node for node in lst if np.array_equal(node.board, board)),
-        None
-    )
 
 def board_key(board: np.ndarray) -> bytes:
     # np.ndarray.tobytes() gives a unique flat byte representation
@@ -58,6 +46,7 @@ def get_path(board):
     while node is not None:
         path.append(node.board)
         node = node.parent
+    # reverse path so it's from beginning
     return path[::-1]
 
 def solve(puzzle: np.ndarray, goal: np.ndarray, heuristic):
@@ -69,9 +58,10 @@ def solve(puzzle: np.ndarray, goal: np.ndarray, heuristic):
         print("The puzzle is already solved")
         return
 
+    visited_states = 0
+
     # Initialize the closed list (visited cells)
-    closed_list = []
-    visited = set()
+    closed_list = set()
 
     # Initialize the start cell details
     board_details = Board(puzzle)
@@ -81,51 +71,52 @@ def solve(puzzle: np.ndarray, goal: np.ndarray, heuristic):
 
     # Initialize the open list (cells to be visited) with the start cell
     open_list = []
-    heapq.heappush(open_list, board_details) # TODO ???
+    heapq.heappush(open_list, board_details)
 
+    # Initialize the open dictionary for checking if board is on it
     open_dict: dict[bytes, Board] = {}
     k0 = board_key(puzzle)
     open_dict[k0] = board_details
 
-    found_dest = False
+    # key of goal board for comparing with others quicker
+    goal_key = board_key(goal)
 
     # Main loop of A* search algorithm
     while len(open_list) > 0:
-        # print(len(open_list) , end=', ')
         current = heapq.heappop(open_list)
+        visited_states += 1
+        # print(len(open_list) , end=", ")
         #pretty_print(current.board)
-        #print("Current:\n", current.board)
-        closed_list.append(current)
 
         key_curr = board_key(current.board)
-        visited.add(key_curr)
         open_dict.pop(key_curr, None)
+        closed_list.add(key_curr)
 
         for neighbour in get_neighbours(current.board):
-            if np.array_equal(neighbour, goal):
-                print("The puzzle is solved")
-                found_dest = True
+            key = board_key(neighbour)
+            if key == goal_key:
+                # print("The puzzle is solved")
                 last_board = Board(neighbour)
                 last_board.parent = current
-                return get_path(last_board)
+                return get_path(last_board), visited_states
 
-            #print(len(closed_list) , end='')
-            key = board_key(neighbour)
-            if key not in visited:
-
+            # complexity of searching in set() is O(1)
+            if key not in closed_list:
+                # skip the neighbour that is a parent of current board
                 if current.parent is not None and np.array_equal(neighbour, current.parent.board):
                     continue
                 #print("b", end='')
+
                 # Calculate the new f, g, and h values
                 g_new = current.g + 1
                 h_new = heuristic(neighbour, goal)
                 f_new = g_new + h_new
 
-                # TODO If the cell is not in the open list or the new f value is smaller
+                #If the cell is not in the open list or the new f value is smaller
                 existing = open_dict.get(key)
                 if existing is None or f_new < existing.f:
-
                     #print(g_new, " ", h_new, " ", f_new)
+
                     # Update the cell details
                     new_board = Board(neighbour)
                     new_board.f = f_new
@@ -135,16 +126,7 @@ def solve(puzzle: np.ndarray, goal: np.ndarray, heuristic):
                     # Add the cell to the open list
                     heapq.heappush(open_list, new_board)
 
-        if len(open_list) == 0:
-            print(get_path(current))
+        # if len(open_list) == 0:
+        #     print(get_path(current))
 
-    if not found_dest:
-        print("FAILED")
-
-# print("c", end='')
-# existing = find_in_open(neighbour, open_list)
-# print(len(open_list), end=' ')
-# if existing is None or existing.f > f_new:
-
-
-
+    print("FAILED")

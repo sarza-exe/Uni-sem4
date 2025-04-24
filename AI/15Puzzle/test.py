@@ -1,27 +1,17 @@
-import numpy as np
-from check_solvability import is_solvable
 from puzzle import *
-from heuristics import hamming_heuristic, manhattan_heuristic
+from heuristics import walking_distance_heuristic, manhattan_heuristic
 from solve import solve
 
 N = 4
-puzzle2 = np.array([
-    [3, 9, 1, 15, ],
-    [14, 11, 4, 6, ],
-    [13, 5, 10, 12, ],
-    [2, 7, 8, 0, ], ]) # Value 0 is used for blank
-
-if not is_solvable(puzzle2):
-    print("Not ")
-print("Solvable")
+# funfact this 15 puzzle has 653'837'184'000 possible states (15!/2)
 
 goal = generate_default_goal(N)
-puzzle = generate_puzzle(N)
-pretty_print(puzzle)
+# puzzle0 = generate_puzzle(N)
+# pretty_print(puzzle0)
 
-
-path = solve(puzzle, goal, manhattan_heuristic)
-print("The path to solve the puzzle has ", len(path), " nodes")
+puzzle1 = generate_puzzle_by_random_moves()
+path, visited = solve(puzzle1, goal, walking_distance_heuristic)
 for p in path:
     pretty_print(p)
-# states_visited, path = solve(puzzle, goal, hamming_heuristic)
+print("Visited stated: ", visited)
+print("The path to solve the puzzle has ", len(path), " nodes")
