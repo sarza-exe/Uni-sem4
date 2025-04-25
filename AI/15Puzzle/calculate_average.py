@@ -6,7 +6,7 @@ N = 4
 goal = generate_default_goal(N)
 
 heuristics = [linear_manhattan_heuristic, walking_distance_heuristic, manhattan_heuristic, linear_conflict_heuristic]
-reps = 1000
+reps = 10000
 
 for heuristic in heuristics:
     count_visited = 0
