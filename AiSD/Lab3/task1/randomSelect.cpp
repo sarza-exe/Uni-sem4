@@ -102,16 +102,16 @@ int main()
         cout << "Failed to found " << k << "-th smallest element.\n";
         return -1;
     }
-
-
     cout << "Managed to find " << k << "-th smallest element.\n";
 
     
     // //code for saving data
     // showSteps = false;
-    // std::ofstream file("data/randomSelectData.txt"); 
+    // std::ofstream file1("data/randomSelectData1.txt"); 
+    // std::ofstream file2("data/randomSelectDataquatern.txt"); 
+    // std::ofstream file3("data/randomSelectDatanhalfn.txt"); 
 
-    // if (!file) {
+    // if (!file1 && !file2 && !file3) {
     //     std::cerr << "Error opening file!" << std::endl;
     //     return -1;
     // }
@@ -121,24 +121,42 @@ int main()
 
     // for(int i = 100; i <= 50000; i += 100)
     // {
-    //     int arr[i];
+    //     int arr[i], cp1[i], cp2[i];
+    //     int k1 = 1;
+    //     int k2 = i/4;
+    //     int k3 = i/2;
     //     uniform_int_distribution<int> bin(0, 2*i-1);
     //     uniform_int_distribution<int> bin2(1, i);
-    //     for(int m = 0; m < 100; m++) // repeat 100 times
+    //     for(int m = 0; m < 50; m++) // repeat 50 times
     //     {
-    //         comparisons = 0;
-    //         swaps = 0;
     //         for (int j = 0; j < i; j++) {
     //             arr[j] = bin(rng);
+    //             cp1[j] = arr[j];
+    //             cp2[j] = arr[j];
     //         }
-    //         int k = bin2(rng);
-    //         int stat = RandomizedSelect(array, 0, i-1, k);
-    //         file << comparisons << " " << swaps << " ";
+    //         comparisons = 0;
+    //         swaps = 0;
+    //         int stat1 = RandomizedSelect(arr, 0, i-1, k1);
+    //         file1 << comparisons << " " << swaps << " ";
+
+    //         comparisons = 0;
+    //         swaps = 0;
+    //         int stat2 = RandomizedSelect(cp1, 0, i-1, k2);
+    //         file2 << comparisons << " " << swaps << " ";
+
+    //         comparisons = 0;
+    //         swaps = 0;
+    //         int stat3 = RandomizedSelect(cp2, 0, i-1, k3);
+    //         file3 << comparisons << " " << swaps << " ";
     //     }   
-    //     file << "\n";  
+    //     file1 << "\n"; 
+    //     file2 << "\n"; 
+    //     file3 << "\n";  
     // }
         
-    // file.close();
+    // file1.close();
+    // file2.close();
+    // file3.close();
 
     return 0;
 }
