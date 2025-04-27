@@ -9,12 +9,22 @@
         <script src="js/nav.js" defer></script>
     </head>
     <body>
-        <nav id="topnav">
+        <nav id="topnav" class="topnav">
             <img id="logo" src="images/Potworek.png" alt="Logo">
+            <a href="javascript:void(0);" id="hamburger" class="icon" onclick="myFunction()">&#9776;</a>
             <a id="hyper1" href="index.html">ABOUT ME</a>
             <a id="hyper2" href="projects.html">PROJECTS</a>
             <a id="hyper3" href="hobbies.html">INTERESTS</a>
         </nav>
+
+        <noscript>
+            <style>
+            /* Show all links, hide the burger icon */
+            #topnav {flex-direction: row !important;}
+            #topnav a { display: inline-block !important; float: none !important; text-align: left; }
+            #topnav a.icon { display: none !important; }
+            </style>
+        </noscript>
         
         <main>
 
@@ -31,10 +41,9 @@
 
             <h2>Programming</h2>
             <p> I enjoy working with a variety of different programming languages
-                like Java, C/C++, GML or Python. I have experience in working with web sockets 
+                like Java, C/C++, GML (Gamemaker) or Python. I have experience in working with web sockets 
                 , databases and making games. 
-                I love tackling challenging projects, learning new skills, 
-                and building solutions that make a difference. 
+                I love tackling challenging projects and learning new skills. 
             </p>
 
             <img src="images/programming.jpg" alt="Pwr">
@@ -43,23 +52,18 @@
 
             <h2>Hobbies</h2>
             <p>In my free time, I explore 3D modeling and game development, which help me stay creative and 
-                motivated. I'm always eager to collaborate and expand my knowledge in the 
-                ever-evolving tech world!</p>
+                motivated.</p>
 
             <img src="images/Ship.png" alt="Pwr">
+
+            <hr>
+
+            <h2>Photos</h2>
+            <p> Check out my photo gallery! <a href="gallery.html">Click Me</a> </p>
         </main>
 
         <footer>
-            <p><b>Contact me: </b> sarazynd@gmail.com <br> &copy;2025 My Portfolio</p>
-
-        <p>
-        <a href="http://jigsaw.w3.org/css-validator/check/referer">
-            <img style="border:0;width:88px;height:31px"
-                src="http://jigsaw.w3.org/css-validator/images/vcss-blue"
-                alt="Valid CSS!" />
-            </a>
-        </p>
-        
+            <p><b>Contact me: </b> sarazynd@gmail.com <br> GitHub: <a href="https://github.com/sarza-exe">sarza-exe</a></p>
         </footer>
 
     </body>

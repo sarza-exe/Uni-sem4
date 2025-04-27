@@ -1,0 +1,63 @@
+#loader { text-align: center; margin: 2em 0; }
+#gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+}
+#gallery img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+/* the dark overlay */
+.modal {
+    display: none;   /* hidden by default */
+    position: fixed;
+    z-index: 1000;  /* on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;  /* if image is taller than viewport */
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* the image inside the modal */
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    max-width: min(1000px, 100%);             /* never wider than 90% of viewport */
+    max-height: 80%;             /* never taller than 80% of viewport */
+    width: auto;                 /* let width auto‐scale */
+    height: auto;                /* let height auto‐scale */
+    object-fit: contain;         /* extra safe: never crop or distort */
+  }
+  
+
+/* caption text */
+#caption {
+    margin: auto;
+    display: block;
+    width: 100%;
+    text-align: center;
+    color: #fff;
+    padding: 10px 0;
+    position: absolute;
+    top: 90%;
+}
+
+/* close button (×) */
+.close {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #fff;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+}

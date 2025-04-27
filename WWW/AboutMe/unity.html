@@ -12,12 +12,22 @@
         <script src="js/nav.js" defer></script>
     </head>
     <body>
-        <nav id="topnav">
+        <nav id="topnav" class="topnav">
             <img id="logo" src="images/Potworek.png" alt="Logo">
+            <a href="javascript:void(0);" id="hamburger" class="icon" onclick="myFunction()">&#9776;</a>
             <a id="hyper1" href="index.html">ABOUT ME</a>
             <a id="hyper2" href="projects.html">PROJECTS</a>
             <a id="hyper3" href="hobbies.html">INTERESTS</a>
         </nav>
+
+        <noscript>
+            <style>
+            /* Show all links, hide the burger icon */
+            #topnav {flex-direction: row !important;}
+            #topnav a { display: inline-block !important; float: none !important; text-align: left; }
+            #topnav a.icon { display: none !important; }
+            </style>
+        </noscript>
         
         <main>
 

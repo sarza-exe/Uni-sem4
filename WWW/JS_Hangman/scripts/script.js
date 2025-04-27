@@ -1,3 +1,6 @@
+/*jslint browser:true */
+/*global console */
+
 const alphabetContainer = document.getElementById("alphabetButtons");
 var answerDisplay = document.getElementById("hold");
 var answer = "";

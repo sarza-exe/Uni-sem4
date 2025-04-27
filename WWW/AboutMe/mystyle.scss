@@ -1,184 +1,229 @@
 //zmienna, mixin, zagniezdzenia, for loop, list, extend
 //sass mystyle.scss styledev.css --style=expanded #135e96;
 //sass mystyle.scss style.css --style=compressed 
+// to turn of js of firefox: about:config javascript.enabled
 @use "sass:list";
-$catchy-color: rgb(0, 153, 255);
-$mustard-color: rgb(255, 187, 0);
-$rasberry-color: rgb(255, 0, 64);
 
-@mixin prepare-back($left, $width) { // mixin
-    content: "";
-    position: fixed;
-    top: 0;
-    left: $left; 
-    width: $width; 
-    height: 100%;
+// color variables
+$catchy-color:  rgb(0, 153, 255);
+$mustard-color: rgb(255, 187,   0);
+$raspberry-color: rgb(255, 0,  64);
+$font-color: black;
+
+// helper mixin
+@mixin prepare-back($left, $width) {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: $left;
+  width: $width;
+  height: 100%;
 }
 
-@media (min-width: 700px) {
-    body::before {
-        @include prepare-back(0, 100%);
-        background-image: url('images/geometric.jpg');
-        background-size: cover;
-        opacity: 0.07;
-        pointer-events: none;
-        z-index: -1;
-    }
+// 1. MOBILE-FIRST BASE STYLES
 
-    body::after {
-        @include prepare-back(22%, 56%);
-        background-color: white;
-        z-index: -1; 
-    }
-}
-
+// prevent horizontal scroll
 html {
-    overflow-x: hidden; /* Prevents horizontal scrolling on the entire page */
-    max-width: 100%; /* Ensures the page does not exceed the viewport width */
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
-    @extend html;
-    margin: 0;
-    font-family: sans-serif, Verdana, Arial, Helvetica;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+  margin: 0;
+  font-family:Verdana, Geneva, Tahoma, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 main {
-    flex: 1;
-    align-items: center;
-    margin-left: 24%;
-    margin-right: 24%;
+  flex: 1;
+  align-items: center;
+  margin-left: 2%;
+  margin-right: 2%;
 }
 
 h2 {
-    padding-left: 1%;
-    font-size: 18px;
+  padding-left: 10px;
+  font-size: 18px;
 }
 
-p { font-size: 17px; }
+p {
+  font-size: 17px;
+}
 
-pre,code
-{
-    display: block;
-    margin: auto;
-    font-size: 16px;
-    border-radius: 10px;
+pre,
+code {
+  display: block;
+  margin: auto;
+  width: 92%;
+  font-size: 16px;
+  border-radius: 10px;
 }
 
 hr {
-    width: 100%;
-    height: 1px;
-    border: none;
-    background-color: $rasberry-color;
+  width: 92%;
+  height: 1px;
+  border: none;
+  background-color: $font-color;
+  margin: 0 auto 1em;
 }
 
 img {
-    display: block;
-    margin: auto;
-    width: 100%;
-    padding-bottom: 10px;
-    border-radius: 10px;
-    border-bottom-right-radius: 20px;
-    border-bottom-left-radius: 20px;
+  display: block;
+  margin: auto  auto 10px;
+  width: 92%;
+  max-width: 600px;
+  border-radius: 10px;
+  border-bottom-right-radius: 20px;
+  border-bottom-left-radius: 20px;
 }
 
-a { //zagniezdzenie selektorow
+a {
+  font-family: 'Courier New', Courier, monospace;
+  color: $raspberry-color;
+  text-decoration: none;
+  &:hover,
+  &:focus {
     color: $mustard-color;
-    &:hover, &:focus {
-        color: $rasberry-color;
-    }
+  }
 }
 
-@media (max-width: 700px) {
-    main{
-        margin-left: 2%;
-        margin-right: 2%;
-    }
-    
-    h2 {
-        padding-left: 10px;
-        font-size: 18px;
-    }
+// top nav: vertical, full-width links
+#topnav {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: #0e0e0e;
+  overflow: hidden;
+  min-height: 48px;
 
-    img {
-        width: 92%;
-        max-width: 600px;
-    }
+  a {
+    display: block;
+    color: #f2f2f2;
+    text-align: center;
+    padding: 14px 10px;
+    font-size: 17px;
+  }
 
-    hr {width: 92%;}
-
-    pre,code{ width: 100%;
-        border-radius: 10px;}
-
-    #topnav {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    #topnav a {
-    width: 100%;   /* zajmują całą szerokość */
-    }
-}
-
-#topnav { // zagniezdzanie selektorow
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    overflow-x: auto; 
-    white-space: nowrap;
-    background-color: #0e0e0e;
-    display: flex;
-    align-items: left;
-    a {
-        display: inline-block;
-        color: #f2f2f2;
-        text-align: center;
-        padding: 14px 10px;
-        text-decoration: none;
-        font-size: 17px;
-    }
-
-    // lista + logika i interpolacja (#{$i}
-    $colors: $catchy-color, $mustard-color, $rasberry-color;
-    @for $i from 1 through 3 {
-        #hyper#{$i}:hover {
-            color: black;
-            background-color: list.nth($colors, $i);
-        }
-    }
-}
-
-#logo {
-    border-radius: 0px;
-    display: inline-block;
-    height: 40px;
-    padding-bottom: 0px;
-    margin: 0px;
-    margin-left: 5px;
-    margin-top: 2px;
-    margin-right: 5px;
-    width: auto;
-}
-
-
-#hamburger {
-    display: none;              /* domyślnie ukrywamy */
-    font-size: 24px;
+  // show hamburger by default (mobile)
+  #hamburger {
+    text-align: left;
+    position: absolute;
+    display: block;
     background: none;
     border: none;
     color: #f2f2f2;
-    padding: 14px 10px;
+    padding: 14px 60px;
     cursor: pointer;
   }
 
+  // hover colors via loop & list.nth
+  $colors: $catchy-color, $mustard-color, $raspberry-color;
+  @for $i from 1 through 3 {
+    #hyper#{$i}:hover {
+      color: black;
+      background-color: list.nth($colors, $i);
+    }
+  }
+}
+
+#topnav a:not(:first-child) {display: none;}
+
+/* The "responsive" class is added to the topnav with JavaScript when the user clicks on the icon. This class makes the topnav look good on small screens (display the links vertically instead of horizontally) */
+#topnav.responsive {position: relative;}
+
+#topnav.responsive a {
+    float: none;
+    display: block;
+    text-align: left;
+}
+
+// logo sizing
+#logo {
+  display: inline-block;
+  height: 40px;
+  margin: 2px 5px 0 5px;
+  padding-bottom: 0;
+  border-radius: 0;
+  width: auto;
+}
+
+// footer (same on all sizes)
 footer {
-    background-color: $catchy-color;
-    color: #f2f2f2;
-    text-align: center;
-    padding: 10px;
+  background-color: $font-color;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 10px;
+  width: 100%;
+  position: relative;
+}
+
+// DESKTOP / WIDE-SCREEN OVERRIDES
+@media (min-width: 700px) {
+  // decorative background layers
+  body::before {
+    @include prepare-back(0, 100%);
+    background-image: url('images/geometric.jpg');
+    background-size: cover;
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: -1;
+  }
+  body::after {
+    @include prepare-back(22%, 56%);
+    background-color: white;
+    z-index: -1;
+  }
+
+  main {
+    margin-left: 24%;
+    margin-right: 24%;
+  }
+
+  h2 {
+    padding-left: 1%;
+  }
+
+  pre,
+  code {
+    width: auto;
+    margin: auto;
+  }
+
+  img {
     width: 100%;
-    position: relative; 
+    padding-bottom: 10px;
+  }
+
+  hr {
+    width: 100%;
+  }
+
+  // horizontal, sticky nav
+  #topnav {
+    flex-direction: row;
+    align-items: flex-start;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    overflow-x: auto;
+    white-space: nowrap;
+
+    a:not(:first-child) {
+      display: inline-block;
+      float: none;
+      width: auto;
+    }
+
+    .responsive a{
+        display: inline-block;
+    }
+
+    // hide hamburger on desktop
+    #hamburger {
+        display: none;
+    }
+  }
+
 }
