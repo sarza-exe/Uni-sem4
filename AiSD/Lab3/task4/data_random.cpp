@@ -1,9 +1,9 @@
 //
-// Created by Sara on 19.03.2025.
+// Created by Sara on 25.04.2025.
 //
-
 #include <iostream>
 #include <random>
+#include <algorithm>
 using namespace std;
 
 int main(int argc, const char * argv[]) {
@@ -19,13 +19,18 @@ int main(int argc, const char * argv[]) {
 
     random_device rd;
     mt19937 rng(rd());
-    uniform_int_distribution<int> bin(1, n);
     uniform_int_distribution<int> bin2(0, 2*n-1);
     
-    int k = bin(rng);
+    int k = bin2(rng);
+    int arr[n];
+    for (int i = 0; i < n; i++) {
+        arr[i] = bin2(rng);
+    }
+    sort(arr, arr+n);
+
     cout << n << " " << k << " ";
     for (int i = 0; i < n; i++) {
-        cout << bin2(rng) << " ";
+        cout << arr[i] << " ";
     }
 
     return 0;

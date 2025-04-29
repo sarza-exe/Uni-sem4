@@ -84,7 +84,8 @@ function loadGameState() {
     loadStateAnimate();
     answerDisplay.innerHTML = wordDisplay.join(" ");
     livesDisplay.innerHTML = life > 1 ? `You have ${life} lives!` : `You have ${life} life!`;
-    if(answer === wordDisplay.join("")) livesDisplay.innerHTML = "You Win!";
+    if(life == 0) livesDisplay.innerHTML = `GAME OVER!</p><p>The word was ${answer}</p>`;
+    if(answer === wordDisplay.join("")) livesDisplay.innerHTML = "YOU WON!";
 
     // select and disable gueassed letters
     guessedLetters.forEach(letter => {
