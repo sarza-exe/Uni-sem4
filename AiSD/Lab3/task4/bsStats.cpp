@@ -38,7 +38,7 @@ int main()
     
     //code for saving data
     showSteps = false;
-    std::ofstream file1("data/bsRandom.txt"); 
+    std::ofstream file1("data/bsBeginning.txt"); 
 
     if (!file1) {
         std::cerr << "Error opening file!" << std::endl;
@@ -52,27 +52,28 @@ int main()
     {
         int arr[i];
         uniform_int_distribution<int> bin(0, 2*i-1);
-        uniform_int_distribution<int> bin2(0, i-1);
+        uniform_int_distribution<int> bin2(0, i/100);
         int val;
 
         comparisons = 0;
         auto start = high_resolution_clock::now();
         int reps = 200;
-        int valIndex;
         //val = 2*i;
         for(int m = 0; m < reps; m++) // repeat
         {
-            valIndex = bin2(rng);
+            val = bin2(rng);
+            // if(val == 0) val = -1;
+            // else val = i+2;
             for (int j = 0; j < i; j++) {
-                arr[j] = bin(rng);
-                if (j == valIndex) val = arr[j];
+                arr[j] = j;
             }
     
             bool find = BinarySearch(arr, 0, i-1, val);
+            //if(find) cout<<"ERRRROR!\t";
         }   
         auto end = high_resolution_clock::now();
         auto duration_us = duration_cast<microseconds>(end - start).count();
-        file1 << comparisons/reps << " " << duration_us/reps << "\n"; 
+        file1 << static_cast<double>(comparisons)/reps << " " << duration_us/reps << "\n"; 
     }
         
     file1.close();

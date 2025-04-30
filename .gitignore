@@ -5,6 +5,7 @@
 **/cmake-build-debug
 **/.vscode
 **/.venv
+**/venv
 **/.git
 **/__pycache__
 *.exe

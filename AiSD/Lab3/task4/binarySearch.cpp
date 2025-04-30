@@ -28,17 +28,14 @@ bool BinarySearch(int *array, const int l, const int r, const int value)
     {
         int mid = l+(r-l)/2;
         int midValue = array[mid];
-        if(midValue == value) {
-            comparisons++;
+        comparisons++;
+        if(midValue == value) 
             return true;
-        }
+        comparisons++;
         if(midValue > value) 
         {
-            comparisons++;
-            cout << l << " " << mid-1 << endl;
             return BinarySearch(array, l, mid-1, value);
         }
-        cout << mid+1 << " " << r << endl;
         return BinarySearch(array, mid+1, r, value); 
     }
     return false;
