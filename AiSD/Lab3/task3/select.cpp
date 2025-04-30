@@ -10,8 +10,8 @@
 using namespace std;
 using namespace std::chrono;
 
-long comparisons = 0;
-long swaps = 0;
+long long comparisons = 0;
+long long swaps = 0;
 bool showSteps = false;
 int n;
 
@@ -131,23 +131,25 @@ int main(int argc, const char * argv[])
         int k = i/4;
         uniform_int_distribution<int> bin(0, 2*i-1);
 
-        for(int m = 0; m < 100; m++) // repeat 100 times
+        int no_reps = 100;
+        // time the Select call
+        auto start = high_resolution_clock::now();
+        for(int m = 0; m < no_reps; m++) // repeat 100 times
         {
             comparisons = 0;
             swaps = 0;
             for (int j = 0; j < i; j++) {
                 arr[j] = bin(rng);
             }
-            // time the Select call
-            auto start = high_resolution_clock::now();
             int stat = Select(arr, 0, i - 1, k, blockSize);
-            auto end = high_resolution_clock::now();
-            auto duration_us = duration_cast<microseconds>(end - start).count();
 
             // write comparisons, swaps, and time in microseconds
-            file1 << comparisons << " " << swaps << " " << duration_us << " ";
+            file1 << comparisons << " " << swaps << " ";
         }   
-        file1 << "\n";  
+        auto end = high_resolution_clock::now();
+        auto duration_us = duration_cast<microseconds>(end - start).count();
+
+        file1 << duration_us/no_reps << "\n";  
     }
         
     file1.close();
