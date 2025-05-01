@@ -35,10 +35,16 @@ bool BinarySearch(int *array, const int l, const int r, const int value)
 
 int main() 
 {
-    
+    // FUN FACT
+    // for non‐existent keys steps occur because
+    // every call to BinarySearch goes all the way down to the 
+    // deepest level of the recursion tree so
+    // comparison count is essentially ⌊log2​(n)⌋+1
+
+
     //code for saving data
     showSteps = false;
-    std::ofstream file1("data/bsBeginning.txt"); 
+    std::ofstream file1("data/bsNone.txt"); 
 
     if (!file1) {
         std::cerr << "Error opening file!" << std::endl;
@@ -52,24 +58,24 @@ int main()
     {
         int arr[i];
         uniform_int_distribution<int> bin(0, 2*i-1);
-        uniform_int_distribution<int> bin2(0, i/100);
+        uniform_int_distribution<int> bin2(0, 1);
         int val;
 
         comparisons = 0;
         auto start = high_resolution_clock::now();
         int reps = 200;
-        //val = 2*i;
+
+        
+        for (int j = 0; j < i; j++)
+            arr[j] = j;
+        
         for(int m = 0; m < reps; m++) // repeat
         {
             val = bin2(rng);
-            // if(val == 0) val = -1;
-            // else val = i+2;
-            for (int j = 0; j < i; j++) {
-                arr[j] = j;
-            }
+            if(val == 0) val = -1;
+            else val = i+2; 
     
             bool find = BinarySearch(arr, 0, i-1, val);
-            //if(find) cout<<"ERRRROR!\t";
         }   
         auto end = high_resolution_clock::now();
         auto duration_us = duration_cast<microseconds>(end - start).count();

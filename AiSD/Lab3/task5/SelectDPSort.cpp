@@ -28,6 +28,59 @@ void display(int *array)
     cout << endl;
 }
 
+void InsertSort(int *array, const int l, const int h, bool print = false) {
+    for (int i = l + 1; i <= h; ++i) {
+        int key = array[i];
+        int j = i - 1;
+        while (j >= l && isBigger(array[j], key)) {
+            array[j + 1] = array[j];
+            --j;
+        }
+        array[j + 1] = key;
+    }
+}
+
+int Partition(int *array, int l, int r, int pivotValue) {
+    int pivotIndex = l;
+    while (pivotIndex <= r && array[pivotIndex] != pivotValue) pivotIndex++;
+    swapElements(array, pivotIndex, r);
+    int pivot = array[r];
+
+    int i = l - 1;
+    for (int j = l; j < r; ++j) {
+        if (!isBigger(array[j], pivot)) {
+            ++i;
+            swapElements(array, i, j);
+        }
+    }
+    swapElements(array, i + 1, r);
+    return i + 1;
+}
+
+int Select(int *array, const int p, const int r, const int i) {
+    if (p == r) return array[p];
+    int length = r - p + 1;
+    if (length <= 5) {
+        InsertSort(array, p, r, false);
+        return array[p + i - 1];
+    }
+    int numMedians = (length + 4) / 5;
+    int *medians = new int[numMedians];
+    for (int g = 0; g < numMedians; ++g) {
+        int gl = p + g * 5;
+        int gr = std::min(gl + 4, r);
+        InsertSort(array, gl, gr, false);
+        medians[g] = array[gl + (gr - gl) / 2];
+    }
+    int mom = Select(medians, 0, numMedians - 1, (numMedians + 1) / 2);
+    delete[] medians;
+    int q = Partition(array, p, r, mom);
+    int k = q - p + 1;
+    if (i == k) return array[q];
+    else if (i < k) return Select(array, p, q - 1, i);
+    else return Select(array, q + 1, r, i - k);
+}
+
 // Partition procedure for dual-pivot quicksort using the COUNT strategy.
 // It partitions the subarray A[low...high] using two pivots.
 // After partitioning, the left pivot goes to index lp and the right pivot to index rp.
@@ -93,16 +146,38 @@ void DPPartition(int *array, int low, int high, int &lp, int &rp) {
     if(showSteps) display(array);
 }
 
-void DPQuickSort(int *array, int low, int high) {
+
+void DPQuickSortMoM(int *array, int low, int high) {
     if (low < high) {
+        int length = high - low + 1;
+        // compute 1/3 and 2/3 positions (1-based)
+        int firstPos = static_cast<int>(std::ceil(length / 3.0));
+        int secondPos = static_cast<int>(std::ceil(2 * length / 3.0));
+
+        int pVal = Select(array, low, high, firstPos);
+        int qVal = Select(array, low, high, secondPos);
+        if (isBigger(pVal, qVal)) std::swap(pVal, qVal);
+
+        // move pVal to low
+        int idxP = low;
+        while (idxP <= high && array[idxP] != pVal) ++idxP;
+        if (idxP > high) idxP = low;
+        swapElements(array, idxP, low);
+
+        // move qVal to high
+        int idxQ = high;
+        while (idxQ >= low && array[idxQ] != qVal) --idxQ;
+        if (idxQ < low) idxQ = high;
+        swapElements(array, idxQ, high);
+
         int lp, rp;
         DPPartition(array, low, high, lp, rp);
-        
-        DPQuickSort(array, low, lp - 1);
-        DPQuickSort(array, lp + 1, rp - 1);
-        DPQuickSort(array, rp + 1, high);
+        DPQuickSortMoM(array, low, lp - 1);
+        DPQuickSortMoM(array, lp + 1, rp - 1);
+        DPQuickSortMoM(array, rp + 1, high);
     }
 }
+
 
 int main() 
 {
@@ -120,7 +195,7 @@ int main()
 
     if(showSteps) display(array);
 
-    DPQuickSort(array, 0, n-1);
+    DPQuickSortMoM(array, 0, n-1);
 
     if(showSteps)
     {
@@ -146,7 +221,7 @@ int main()
     
     //CODE FOR SAVING DATA
     // showSteps = false;
-    // std::ofstream file("data/dpqsDataWorst.txt"); //data/qsData.txt
+    // std::ofstream file("data/sdpqsData.txt"); //data/sqsData.txt
 
     // if (!file) {
     //     std::cerr << "Error opening file!" << std::endl;
@@ -156,7 +231,7 @@ int main()
     // random_device rd;
     // mt19937 rng(rd());
 
-    // int no_reps = 50;
+    // int no_reps = 100;
     // for(int i = 100; i <= 10000; i += 100)
     // {
     //     int arr[i];
@@ -167,9 +242,9 @@ int main()
     //     for(int k = 0; k < no_reps; k++) // repeat 100 times
     //     {
     //         for (int j = 0; j < i; j++) {
-    //             arr[j] = j; //bin(rng);
+    //             arr[j] = bin(rng); //j;
     //         }
-    //         DPQuickSort(arr, 0, i-1);
+    //         DPQuickSortMoM(arr, 0, i-1);
     //     }
     //     auto end = high_resolution_clock::now();
     //     auto duration_us = duration_cast<microseconds>(end - start).count();

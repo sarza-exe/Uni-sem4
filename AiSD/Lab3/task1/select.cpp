@@ -49,6 +49,7 @@ void InsertSort(int *array, const int l, const int h, bool print) {
 }
 
 int Partition(int *array, int l, int r, int x) {
+    if(showSteps) cout << "Pivot: " << x << "\t";
     // Find x in A[l..r] and move it to end
     int pivotIndex = l;
     while (pivotIndex <= r && array[pivotIndex] != x) pivotIndex++;
@@ -64,6 +65,7 @@ int Partition(int *array, int l, int r, int x) {
         }
     }
     swapElements(array, i + 1, r);
+    if(showSteps) display(array);
     return i + 1;
 }
 

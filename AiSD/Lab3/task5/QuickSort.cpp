@@ -58,7 +58,6 @@ void QuickSort(int *array, const int l, const int h)
     if (l < h)
     {
         int pivot = partition(array, l, h);
-
         QuickSort(array, l, pivot);
         QuickSort(array, pivot+1, h);
     }
@@ -67,78 +66,77 @@ void QuickSort(int *array, const int l, const int h)
 
 int main() 
 {
-    // cin >> n;
+    cin >> n;
 
-    // if(n < 40) showSteps = true;
+    if(n < 40) showSteps = true;
 
-    // int array[n];
-    // int copy[n];
-    // for(int i = 0; i < n; i++)
-    // {
-    //     cin >> array[i];
-    //     if(showSteps) copy[i] = array[i];
-    // }
+    int array[n];
+    int copy[n];
+    for(int i = 0; i < n; i++)
+    {
+        cin >> array[i];
+        if(showSteps) copy[i] = array[i];
+    }
 
-    // if(showSteps) display(array);
+    if(showSteps) display(array);
 
-    // QuickSort(array, 0, n-1);
+    QuickSort(array, 0, n-1);
 
-    // if(showSteps)
-    // {
-    //     cout << "Input Array:\n";
-    //     display(copy);
-    //     cout << "Sorted Array:\n";
-    //     display(array);
-    // }
+    if(showSteps)
+    {
+        cout << "Input Array:\n";
+        display(copy);
+        cout << "Sorted Array:\n";
+        display(array);
+    }
 
-    // cout << "Number of comparisons: " << comparisons << "\n";
-    // cout << "Number of swaps: " << swaps << "\n";
+    cout << "Number of comparisons: " << comparisons << "\n";
 
-    // for(int i = 0; i < n-1; i++)
-    // {
-    //     if(array[i] > array[i+1])
-    //     {
-    //         cout << "Array is not sorted.\n";
-    //         return -1;
-    //     }
-    // }
+    for(int i = 0; i < n-1; i++)
+    {
+        if(array[i] > array[i+1])
+        {
+            cout << "Array is not sorted.\n";
+            return -1;
+        }
+    }
 
-    // cout << "Array is indeed sorted\n";
+    cout << "Array is indeed sorted\n";
 
     
-    //code for saving data
-    showSteps = false;
-    std::ofstream file("data/quickSortData.txt"); 
+    //CODE FOR SAVING DATA
+    // showSteps = false;
+    // std::ofstream file("data/qsDataWorst.txt"); //data/qsData.txt
 
-    if (!file) {
-        std::cerr << "Error opening file!" << std::endl;
-        return -1;
-    }
+    // if (!file) {
+    //     std::cerr << "Error opening file!" << std::endl;
+    //     return -1;
+    // }
 
-    random_device rd;
-    mt19937 rng(rd());
+    // random_device rd;
+    // mt19937 rng(rd());
 
-    int no_reps = 100;
-    for(int i = 100; i <= 10000; i += 100)
-    {
-        int arr[i];
-        uniform_int_distribution<int> bin(0, 2*i-1);
-        // time the sort
-        auto start = high_resolution_clock::now();
-        comparisons = 0;
-        for(int k = 0; k < no_reps; k++) // repeat 100 times
-        {
-            for (int j = 0; j < i; j++) {
-                arr[j] = j;
-            }
-            QuickSort(arr, 0, i-1);
-        }   
-        auto end = high_resolution_clock::now();
-        auto duration_us = duration_cast<microseconds>(end - start).count();
-        file << comparisons/no_reps << " " << duration_us/no_reps << "\n";  
-    }
+    // int no_reps = 100;
+    // for(int i = 100; i <= 10000; i += 100)
+    // {
+    //     int arr[i];
+    //     uniform_int_distribution<int> bin(0, 2*i-1);
+    //     // time the sort
+    //     auto start = high_resolution_clock::now();
+    //     comparisons = 0;
+    //     for(int k = 0; k < no_reps; k++) // repeat 100 times
+    //     {
+    //         for (int j = 0; j < i; j++) {
+    //             arr[j] = j; //bin(rng);
+    //         }
+    //         QuickSort(arr, 0, i-1);
+    //     }
+    //     auto end = high_resolution_clock::now();
+    //     auto duration_us = duration_cast<microseconds>(end - start).count();
+    //     file << comparisons/no_reps << " " << duration_us/no_reps << "\n";  
+    // }
         
-    file.close();
+    // file.close();
 
     return 0;
 }

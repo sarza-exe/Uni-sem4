@@ -50,13 +50,13 @@ for i in range(0, len(file_paths)):
 
 log_curve = np.log2(n_values)
 # scale it to line up better with data
-scale = comps[0][20] / log_curve[20]
+scale = 1.80
 log_curve *= scale
 plt.plot(n_values,log_curve,color='red', linestyle='--',linewidth=1.5,label=f"{scale:.2f}*log₂(N)")
 
 log_curve = np.log2(n_values)
 # scale it to line up better with data
-scale = comps[3][17] / log_curve[17]
+scale = 2.06
 log_curve *= scale
 plt.plot(n_values,log_curve,color='black', linestyle='--',linewidth=1.5,label=f"{scale:.2f}*log₂(N)")
 
