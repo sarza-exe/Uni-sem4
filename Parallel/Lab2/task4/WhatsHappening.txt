@@ -1,0 +1,32 @@
+1. var travelers [Nr_Of_Traps + Nr_Of_Travelers + Nr_Of_Wild_Travelers]GeneralTraveler
+travelers[id] = &Trap{}, &Legal{}, &Wild{}
+Any type that defines all three methods with exact matching signatures is considered to implement GeneralTraveler interface — no explicit declaration is needed.
+
+
+2. Printer is a struct that has to channels. First it gathers all reports from legals and wilds, then signals done channel, prints all trap's reports and again signals done channel
+
+
+3. In tile we use stateful goroutines so it behaves like server. 
+
+Entering:
+If entering succeeds we send Success on Request.ResponseChannel
+n.traveler is traveler currently on a tile
+Request.Traveler is traveler that wants to enter tile
+If there is legal on tile we add Request to n.waiting slice
+If there is wild on tile and Request.Traveler is legal we try to move him. We choose direction and try to enter the tile for maximum of 100 ms (then we send fail to ResponseChannel (what if there was traveler that moved???)).
+If there is trap on the tile we move logic to the trap.
+
+Leaving:
+First we just set tile's traveler to nil
+Then we check if there are EnterChannel requests in n.waiting. If <-request.ResponseChannel return response we continue cuz he moved on. Else we move the request.Traveler to our tile 
+make(chan Response, 1) makes channel buffering up to 1 value
+
+
+4. Wild just waits to appear then listens for relocation request and desapears after his live is over or he is trapped
+
+
+5. Trap listens on TrapChannel. If there is legal we change our symbol to lowercase of their symbol. If there is wild we move them outside of the board and change our symbol to '?'. Then if something other then trap was caught we Store_Trace, wait a bit, change our symbol back to '#' and Store_Trace again.
+
+
+6. WHAT IF TRAP WANTS TO ENTER TRAP
+The trap sets other's trap response to fail
