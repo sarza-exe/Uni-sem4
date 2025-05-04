@@ -217,6 +217,7 @@ procedure Ex3 is
             select
               -- try to enter
               Board(New_Position.X, New_Position.Y).Enter(Traveler.Traveler.Id, Response);
+              -- else fires if there is legal on new tile
             else -- blocks if legal there - cant move
               Response := Fail;
             end select;

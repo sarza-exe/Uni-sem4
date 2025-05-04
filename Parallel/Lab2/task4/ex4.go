@@ -8,14 +8,14 @@ import (
 )
 
 const Nr_Of_Travelers int = 15
-const Nr_Of_Wild_Travelers int = 15
+const Nr_Of_Wild_Travelers int = 10
 const Nr_Of_Traps = 10
 
 const Min_Steps int = 10
 const Max_Steps int = 100
 
-const Min_Delay time.Duration = 10000000
-const Max_Delay time.Duration = 50000000
+const Min_Delay time.Duration = 10 * time.Millisecond
+const Max_Delay time.Duration = 50 * time.Millisecond
 
 const Board_Width int = 15
 const Board_Height int = 15
@@ -210,8 +210,7 @@ func (n *Tile) Start() {
 
 						if TileResponse != Fail {
 							if TileResponse != Trapped {
-								newPos := newPosition
-								wild.RelocateChannel <- RelocateRequest{newPos, Success}
+								wild.RelocateChannel <- RelocateRequest{newPosition, Success}
 							}
 							n.traveler = Request.Traveler
 							Request.ResponseChannel <- Success
@@ -227,21 +226,19 @@ func (n *Tile) Start() {
 				}
 			case <-n.LeaveChannel:
 				n.traveler = nil
-				newWaiting := n.waiting[:0] // reuse memory
 				for _, request := range n.waiting {
 					select {
 					case <-request.ResponseChannel:
 						continue // he's moved on - dont answer
 					default:
-						if n.traveler == nil {
-							request.ResponseChannel <- Success
-							n.traveler = request.Traveler
-						} else {
-							newWaiting = append(newWaiting, request)
-						}
+						request.ResponseChannel <- Success
+						n.traveler = request.Traveler
+						n.waiting = n.waiting[:0]
+					}
+					if n.traveler != nil {
+						break
 					}
 				}
-				n.waiting = newWaiting // keep the rest
 			}
 		}
 	}()
@@ -341,7 +338,7 @@ func (t *Wild) Init(id int, symbol rune) {
 	t.RelocateChannel = make(chan RelocateRequest)
 	t.Id = id
 	t.Symbol = symbol
-	t.timeAppear = time.Duration(rand.Int63n(int64(int(Max_Delay) * 30)))
+	t.timeAppear = time.Duration(rand.Int63n(int64(int(Max_Delay) * Max_Steps)))
 	t.timeDisappear = t.timeAppear + time.Duration(rand.Int63n(int64(int(Max_Delay)*Max_Steps-int(t.timeAppear))))
 }
 
