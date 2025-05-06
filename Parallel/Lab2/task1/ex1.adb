@@ -354,6 +354,7 @@ procedure Ex1 is
 
     delay Time_Appear;
 
+   -- choose initial position
     Success := False;
     while not Success loop
       Traveler.Position := ( -- random initial position
@@ -369,6 +370,7 @@ procedure Ex1 is
     Time_Stamp := To_Duration(Clock - Start_Time);
     Store_Trace;
 
+   -- accept relocation from legal travelers
     loop
       select
         -- forceful relocation
