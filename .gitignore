@@ -8,6 +8,8 @@
 **/venv
 **/.git
 **/__pycache__
+**/node_modules
+*.env
 *.exe
 *.o
 *.ali
