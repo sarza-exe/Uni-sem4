@@ -19,7 +19,7 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 
 // Protected routes example: only authenticated
-app.use('/api/doctors', authJWT, doctorsRouter);
+app.use('/api/doctors', doctorsRouter);
 app.use('/api/patients', authJWT, patientsRouter);
 app.use('/api/appointments', authJWT, appointmentsRouter);
 // Only admin can delete appointments
@@ -40,6 +40,7 @@ connectDB().then(() => {
 //TODO
 // /patient/id/appointments
 // http status codes
+// in auth.js there is role('admin')
 
 // clinic-api/
 // ├─ src/

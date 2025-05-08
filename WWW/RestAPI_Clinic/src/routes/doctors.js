@@ -1,20 +1,17 @@
+// src/routes/doctors.js
 const express = require('express');
-const router  = express.Router();
+const router = express.Router();
 const doctorCtrl = require('../controllers/doctors');
+const authJWT = require('../middleware/authJWT');
 
-// GET /doctors
+// Public routes
 router.get('/', doctorCtrl.getAll);
-
-// GET /doctors/:id
 router.get('/:id', doctorCtrl.getById);
+router.get('/specialty/:specialty', doctorCtrl.getBySpecialty);
 
-// POST /doctors
-router.post('/', doctorCtrl.create);
-
-// PUT /doctors/:id
-router.put('/:id', doctorCtrl.update);
-
-// DELETE /doctors/:id
-router.delete('/:id', doctorCtrl.remove);
+// Protected routes (require valid JWT)
+router.put('/:id', authJWT, doctorCtrl.update);
+router.delete('/:id', authJWT, doctorCtrl.remove);
+router.patch('/:id/password', authJWT, doctorCtrl.changePassword)
 
 module.exports = router;

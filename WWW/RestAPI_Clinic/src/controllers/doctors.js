@@ -43,10 +43,29 @@ exports.getById = async (req, res, next) => {
   }
 };
 
+// GET /doctors/specialty/:specialty
+exports.getBySpecialty = async (req, res, next) => {
+  try {
+    const { specialty } = req.params;
+    const doctors = await Doctor.find({ specialty })
+      .select('-passwordHash')
+      .sort({ name: 1 });
+    res.json(doctors);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // PUT /doctors/:id
 exports.update = async (req, res, next) => {
   try {
+    const { id, role: requesterRole } = req.user;
     const updates = { ...req.body };
+
+    // Only allow admin or the doctor themselves
+    if (requesterRole !== 'admin' && id !== req.params.id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
 
     if (updates.password) {
       updates.passwordHash = await bcrypt.hash(updates.password, 10);
@@ -66,9 +85,41 @@ exports.update = async (req, res, next) => {
   }
 };
 
+// PATCH /doctors/:id/password
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { id: requesterId, role } = req.user;
+    const targetId = req.params.id;
+
+    // only admin or the doctor themselves
+    if (role !== 'admin' && requesterId !== targetId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ error: 'New password is required' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const doctor = await Doctor.findByIdAndUpdate(targetId, { passwordHash });
+
+    if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
+    res.json({ message: 'Password updated' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // DELETE /doctors/:id
 exports.remove = async (req, res, next) => {
   try {
+    const { role: requesterRole } = req.user;
+    // Only admin can delete
+    if (requesterRole !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const doctor = await Doctor.findByIdAndDelete(req.params.id);
     if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
     res.status(204).end();
