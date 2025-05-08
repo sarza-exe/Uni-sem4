@@ -2,9 +2,9 @@
 require('dotenv').config();
 const mongoose  = require('mongoose');
 const connectDB = require('./config/db');
-const Doctor = require('./models/doctor');
+const Doctor = require('./models/Doctor');
 const Patient = require('./models/patient');
-const Appointment = require('./models/appointment');
+const Appointment = require('./models/Appointment');
 const bcrypt = require('bcryptjs');
 
 // --- Seed func ---

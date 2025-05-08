@@ -2,15 +2,19 @@ const bcrypt = require('bcryptjs');
 const Doctor = require('../models/Doctor');
 
 // GET /doctors?page=&limit=
+// exports exports function so it can be used in other files
 exports.getAll = async (req, res, next) => {
   try {
+    // || number is default
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
     const [total, doctors] = await Promise.all([
+      // total number of doctors (for frontend)
       Doctor.countDocuments(),
       Doctor.find()
+        // exclude hash
         .select('-passwordHash')
         .skip(skip)
         .limit(limit)
@@ -34,24 +38,6 @@ exports.getById = async (req, res, next) => {
     const doctor = await Doctor.findById(req.params.id).select('-passwordHash');
     if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
     res.json(doctor);
-  } catch (err) {
-    next(err);
-  }
-};
-
-// POST /doctors
-exports.create = async (req, res, next) => {
-  try {
-    const { name, specialty, email, password, role } = req.body;
-    const existing = await Doctor.findOne({ email });
-    if (existing) return res.status(400).json({ error: 'Email already in use' });
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const doctor = await Doctor.create({ name, specialty, email, passwordHash, role });
-    // exclude passwordHash in response
-    const { passwordHash: _, ...doctorData } = doctor.toObject();
-
-    res.status(201).json(doctorData);
   } catch (err) {
     next(err);
   }

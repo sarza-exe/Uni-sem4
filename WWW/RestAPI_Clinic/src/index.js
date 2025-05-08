@@ -1,23 +1,45 @@
 require('dotenv').config();
 const express = require('express');
 const connectDB = require('./config/db');
-
-const app = express();
-app.use(express.json());
-
 // router import
 const doctorsRouter      = require('./routes/doctors');
 const patientsRouter     = require('./routes/patients');
 const appointmentsRouter = require('./routes/appointments');
 
-// Uruchomienie serwera po udanym połączeniu
+const authRouter = require('./routes/auth');
+const authJWT = require('./middleware/authJWT');
+const role = require('./middleware/role');
+
+const errorHandler = require('./middleware/errorHandler');
+
+const app = express();
+app.use(express.json());
+
+// Auth routes
+app.use('/api/auth', authRouter);
+
+// Protected routes example: only authenticated
+app.use('/api/doctors', authJWT, doctorsRouter);
+app.use('/api/patients', authJWT, patientsRouter);
+app.use('/api/appointments', authJWT, appointmentsRouter);
+// Only admin can delete appointments
+app.use(errorHandler);
+
+// // Global error handler
+// app.use((err, req, res, next) => {
+//   console.error(err);
+//   res.status(err.status || 500).json({ error: err.message });
+// });
+
 connectDB().then(() => {
-  app.listen(process.env.PORT || 3000, () =>
-    console.log(`Server listening on port ${process.env.PORT || 3000}`)
-  );
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Server run on port ${PORT}`));
 });
 
 //tree */
+//TODO
+// /patient/id/appointments
+// http status codes
 
 // clinic-api/
 // ├─ src/
@@ -31,11 +53,7 @@ connectDB().then(() => {
 
 // TODO
 // Modele – zaimplementuj schematy Doctor, Patient, Appointment.
-
 // Routing – stwórz pliki routes/doctors.js, routes/patients.js, routes/appointments.js, załaduj je w index.js.
-
 // Kontrolery – w controllers/ zrób CRUD i w jednym z zasobów paginację/filtrowanie/sortowanie (np. lista wizyt z filtrem po dacie i paginacją).
-
 // Auth – middleware do wyciągnięcia i weryfikacji JWT, funkcje logowania (POST /auth/login) i rejestracji.
-
 // Role – w middleware sprawdzaj req.user.role, blokuj nieautoryzowane ścieżki.
