@@ -5,7 +5,7 @@ Clinic
 → Get doctors
   GET http://localhost:3000/api/doctors [200 OK, 911B, 59ms]
 
-→ Post visit Copy
+→ Post visit unauthorized
   POST http://localhost:3000/api/appointments [401 Unauthorized, 281B, 3ms]
 
 → Register Patient
@@ -17,7 +17,7 @@ Clinic
 → Login as Patient
   POST http://localhost:3000/api/auth/login [400 Bad Request, 275B, 39ms]
 
-→ Login as Patient Copy
+→ Login as Patient 
   POST http://localhost:3000/api/auth/login [200 OK, 419B, 95ms]
 
 → Post visit
