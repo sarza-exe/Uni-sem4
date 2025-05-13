@@ -172,7 +172,40 @@
 - **Oczekiwanie:** HTTP 201 Created + { token }
 - **Wynik:** 201 Created, 445B, 138ms
 
-## 3. Podsumowanie wyników Newman
+## 3. Test Bezpieczeństwa Autoryzacji JWT
+
+### Przypadek testowy: Odrzucenie niepodpisanego JWT (`alg: "none"`)
+
+### Cel testu  
+Upewnienie się, że API **nie akceptuje niepodpisanych tokenów JWT** z nagłówkiem `"alg": "none"`, co mogłoby umożliwić obejście autoryzacji bez znajomości sekretu.
+
+### Struktura złośliwego tokena
+```json
+Header:
+{
+  "typ": "JWT",
+  "alg": "none"
+}
+Payload:
+{
+  "sub": "1234567890",
+  "name": "John Doe",
+  "iat": 1516239022
+}
+Signature:
+(brak)
+```
+
+Token został wysłany przez Postmana w nagłówku Authorization: Bearer <token> do chronionego endpointu.
+
+### Wynik
+Serwer powinien odrzucić żądanie z kodem 401 Unauthorized — i faktycznie poprawnie to zrobił.
+
+### Wniosek
+API prawidłowo weryfikuje tokeny JWT i nie pozwala na użycie algorytmu none, co oznacza, że mechanizm weryfikacji JWT został zaimplementowany bezpiecznie i nie jest podatny na ten popularny wektor ataku.
+
+
+## 4. Podsumowanie wyników Newman
 
 newman run Clinic.postman_collection.json
 

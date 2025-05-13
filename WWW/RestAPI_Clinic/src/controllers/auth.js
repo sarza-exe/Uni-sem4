@@ -17,7 +17,7 @@ exports.registerPatient = async (req, res, next) => {
     const token = jwt.sign(
       { id: patient._id, role: patient.role },
       process.env.JWT_SECRET,
-      { expiresIn: '14d' }
+      { expiresIn: '1h' }
     );
 
     res.status(201).json({ token });
@@ -39,7 +39,7 @@ exports.registerDoctor = async (req, res, next) => {
     const token = jwt.sign(
       { id: doctor._id, role: doctor.role },
       process.env.JWT_SECRET,
-      { expiresIn: '14d' }
+      { expiresIn: '8h' }
     );
 
     res.status(201).json({ token });
