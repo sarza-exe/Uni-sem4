@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const Doctor = require('../models/Doctor');
+const Doctor = require('../models/doctor');
 
 // GET /doctors?page=&limit=
 // exports exports function so it can be used in other files

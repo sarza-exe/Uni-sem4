@@ -11,6 +11,7 @@ Random Boot ver. 0.2
 #include <gsl/gsl_randist.h>
 #include <time.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
 
 #include "./board.h"
 

@@ -1,7 +1,7 @@
 // src/controllers/auth.js
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const Doctor = require('../models/Doctor');
+const Doctor = require('../models/doctor');
 const Patient = require('../models/patient');
 
 // POST /auth/register/patient
