@@ -2,6 +2,7 @@
 const Appointment = require('../models/appointment');
 
 // GET /appointments?page=&limit=&doctor=&patient=&date
+// GET /appointments?page=&limit=&doctor=&patient=&date&sort
 exports.getAll = async (req, res, next) => {
   try {
     const page  = parseInt(req.query.page, 10)  || 1;
@@ -23,12 +24,15 @@ exports.getAll = async (req, res, next) => {
       }
     }
 
+    // Determine sort order: 'asc' or 'desc'
+    const sortOrder = req.query.sort === 'desc' ? -1 : 1;
+
     const [total, appointments] = await Promise.all([
       Appointment.countDocuments(filter),
       Appointment.find(filter)
         .populate('doctor', 'name specialty')
         .populate('patient', 'name email')
-        .sort({ date: 1 })
+        .sort({ date: sortOrder })
         .skip(skip)
         .limit(limit)
     ]);
