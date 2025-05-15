@@ -1,9 +1,10 @@
+import math
+
 import numpy as np
 # A utility program to check if 15 puzzle is solvable
 
 # A function to count inversions in given array
-def get_inv_count(puzzle, size):
-    arr = puzzle.flatten()
+def get_inv_count(arr, size):
     inv_count = 0
     for i in range(size * size - 1):
         for j in range(i + 1, size * size):
@@ -15,15 +16,16 @@ def get_inv_count(puzzle, size):
     return inv_count
 
 # find Position of blank from bottom
-def find_blank_pos(puzzle: np.ndarray, size):
+def find_blank_pos(puzzle, size):
     # find the row index of the blank
-    blank_row = np.where(puzzle == 0)[0][0]
+    #blank_row = np.where(puzzle == 0)[0][0]
+    blank_row = puzzle.index(0) // size
     # convert to distance from bottom
     return size - blank_row
 
 # This function returns true if given instance of N*N - 1 puzzle is solvable
-def is_solvable(puzzle: np.ndarray):
-    size = puzzle.shape[0]
+def is_solvable(puzzle):
+    size = int(math.sqrt(len(puzzle)))
     # Count inversions in given puzzle
     inv_count = get_inv_count(puzzle, size)
 
@@ -41,9 +43,7 @@ def is_solvable(puzzle: np.ndarray):
 # puzzle1 = np.array([
 #     [3, 9, 1, 15, ],
 #     [14, 11, 4, 6, ],
-#     [13, 5, 10, 12, ],  # Value 0 is used for empty space
+#     [13, 5, 10, 12, ],  # Value 0 is used for blank
 #     [2, 7, 8, 0, ], ])
 #
 # print("Solvable") if is_solvable(puzzle1) else print("Not Solvable")
-
-# ctrl + / to comment

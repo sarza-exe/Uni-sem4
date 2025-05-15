@@ -1,81 +1,73 @@
-import numpy as np
 import random
+import math
 from check_solvability import is_solvable
 
-def pretty_print(state: np.ndarray):
-    print("__"*12)
-    for row in state:
-        for element in row :
-            # print like a table
-            if len(str(element)) == 1:
-                print("  ",element," ", end="")
-            else:
-                print(" ",element," ", end="")
+# Precompute move table for every possible blank-tile position in N x N puzzle
+# move_table[0]=[4, 1] from top-left (0,0) we can move down to idx=4 or right to idx=1
+def build_move_table(N):
+    move_table = {}
+    for idx in range(N * N):
+        moves = []
+        row, col = divmod(idx, N) # row = idx // N, col = idx % N.
+        if row > 0:
+            moves.append(idx - N)  # up
+        if row < N - 1:
+            moves.append(idx + N)  # down
+        if col > 0:
+            moves.append(idx - 1)  # left
+        if col < N - 1:
+            moves.append(idx + 1)  # right
+        move_table[idx] = moves
+    return move_table
+
+# Pretty-print a flat tuple state
+def pretty_print(state: tuple):
+    N = int(math.sqrt(len(state)))
+    print("" + "__" * (2*N))
+    for i in range(N):
+        row = state[i*N:(i+1)*N]
+        for val in row:
+            s = f" {val}" if val < 10 else str(val)
+            if val == 0:
+                s = "  "
+            print(s.rjust(3), end=" ")
         print()
 
-def generate_default_goal(puzzle_size) -> np.ndarray:
+# Generate default goal state as tuple
+def generate_default_goal(puzzle_size: int) -> tuple:
     n = puzzle_size * puzzle_size
-    # make [1,2,...,N^2], then set the last element to 0
-    goal = np.arange(1, n + 1, dtype=int)
-    goal[-1] = 0
-    return goal.reshape(puzzle_size, puzzle_size)
+    # values 1..n-1, then 0
+    return tuple(list(range(1, n)) + [0])
 
-def generate_puzzle(puzzle_size) -> np.ndarray:
-    # Get the goal so we can grab all tiles except the blank
+# Generate random puzzle by shuffling tiles
+def generate_puzzle(puzzle_size: int) -> tuple:
     goal = generate_default_goal(puzzle_size)
-    # get a copy of all non-zero tiles
-    flat_tiles = goal.flatten()
-    flat_tiles = flat_tiles[flat_tiles != 0].copy()
-
+    tiles = list(goal[:-1])  # exclude blank
     while True:
-        # shuffle in place
-        np.random.shuffle(flat_tiles)
-        # append the blank (0) and reshape back to N×N
-        arr = np.concatenate([flat_tiles, [0]])
-        state = arr.reshape(puzzle_size, puzzle_size)
-
+        random.shuffle(tiles)
+        state = tuple(tiles + [0])
         if is_solvable(state):
             return state
 
-
-def generate_puzzle_by_random_moves(puzzle_size: int = 4, k: int = 30) -> np.ndarray:
-    """
-    Generate a random solvable sliding puzzle by applying k random moves
-    to the goal state.
-    k (int): Number of random backward moves (must be > 20).
-    """
-    if k <= 20:
-        raise ValueError("Number of moves k must be greater than 20")
-
-    # Start from the goal state
-    puzzle = generate_default_goal(puzzle_size).copy()
-    # Track the blank (empty) position
-    blank_r, blank_c = puzzle_size - 1, puzzle_size - 1
-
-    # Define possible move directions (row_change, col_change)
-    moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    # Reverse move lookup to avoid immediate backtracking
-    reverse = {(-1, 0): (1, 0), (1, 0): (-1, 0), (0, -1): (0, 1), (0, 1): (0, -1)}
+# Generate random puzzle by k random moves from goal
+def generate_puzzle_by_random_moves(puzzle_size: int = 4, k: int = 30) -> tuple:
+    N = puzzle_size
+    move_table = build_move_table(N)
+    state = list(generate_default_goal(N))
+    blank_idx = len(state) - 1  # starts at end
     last_move = None
-
+    reverse = {(-N, N), (N, -N), (-1, 1), (1, -1)}  # but we track offsets
     for _ in range(k):
-        # Collect valid moves (inside bounds and not reversing last move)
-        valid_moves = []
-        for dr, dc in moves:
-            nr, nc = blank_r + dr, blank_c + dc
-            if 0 <= nr < puzzle_size and 0 <= nc < puzzle_size:
-                if last_move is None or (dr, dc) != reverse[last_move]:
-                    valid_moves.append((dr, dc))
-
-        # Choose a random valid move
-        dr, dc = random.choice(valid_moves)
-        nr, nc = blank_r + dr, blank_c + dc
-
-        # Swap the blank with the chosen tile
-        puzzle[blank_r, blank_c], puzzle[nr, nc] = puzzle[nr, nc], puzzle[blank_r, blank_c]
-
-        # Update blank position and last move
-        blank_r, blank_c = nr, nc
-        last_move = (dr, dc)
-
-    return puzzle
+        possible = move_table[blank_idx]
+        # filter reverse of last move
+        if last_move is not None:
+            back = blank_idx - last_move
+            choices = [idx for idx in possible if idx != back]
+        else:
+            choices = possible[:]
+        nxt = random.choice(choices)
+        # swap blank and tile
+        state[blank_idx], state[nxt] = state[nxt], state[blank_idx]
+        last_move = nxt - blank_idx
+        blank_idx = nxt
+    return tuple(state)

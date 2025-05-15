@@ -1,132 +1,101 @@
-import numpy as np
 import heapq
+import math
 from check_solvability import is_solvable
-from puzzle import pretty_print
+import numpy as np
+from puzzle import build_move_table
 
 class Board:
-    def __init__(self, board: np.ndarray):
-        self.board = board.copy()
-    # Parent cell's board
-        self.parent = None
-    # Total cost of the cell (g + h)
-        self.f = 0
-    # Cost from start to this cell
-        self.g = 0
+    # reserve space for explicitly declared data members
+    __slots__ = ('state', 'parent', 'f', 'g')
 
-    def __lt__(self, other: "Board") -> bool:
+    def __init__(self, state, g=0, f=0, parent=None):
+        self.state = state     # tuple of ints length N*N
+        self.g = g             # cost from start to this board
+        self.f = f             # total estimated cost (g + h)
+        self.parent = parent   # parent's Board
+
+    def __lt__(self, other):
         # heapq will use this to compare two Boards
         return self.f < other.f
 
-# return a list of all boards reachable in one move.
-def get_neighbours(board: np.ndarray):
-    size = board.shape[0]
-    # find the pos of blank
-    i, j = np.argwhere(board == 0)[0]
+# Generate neighbors of a state (tuple) using the move table
+def get_neighbors(state, move_table):
+    zero_idx = state.index(0) # index of element equal to 0
+    neighbors = []
+    for idx in move_table[zero_idx]:
+        # swap zero and tile at idx
+        new_state = list(state)
+        new_state[zero_idx], new_state[idx] = new_state[idx], new_state[zero_idx]
+        neighbors.append(tuple(new_state))
+    return neighbors
 
-    neighbours = []
-    # offsets for up, down, left, right
-    for di, dj in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-        ni, nj = i + di, j + dj
-        # check bounds
-        if 0 <= ni < size and 0 <= nj < size:
-            new_board = board.copy()
-            # swap blank with neighbour
-            new_board[i, j], new_board[ni, nj] = new_board[ni, nj], new_board[i, j]
-            neighbours.append(new_board)
-    return neighbours
-
-
-def board_key(board: np.ndarray) -> bytes:
-    # np.ndarray.tobytes() gives a unique flat byte representation
-    return board.tobytes()
-
+# Reconstruct the path from goal Board to start
 def get_path(board):
     path = []
     node = board
-    while node is not None:
-        path.append(node.board)
+    while node:
+        path.append(node.state)
         node = node.parent
     # reverse path so it's from beginning
     return path[::-1]
 
-def solve(puzzle: np.ndarray, goal: np.ndarray, heuristic):
+# heuristic: function(state: tuple, goal: tuple) -> int
+def solve(puzzle, goal, heuristic):
     if not is_solvable(puzzle):
         print("Puzzle is not solvable")
-        return
+        return None, 0
 
-    if np.array_equal(puzzle, goal):
+    if puzzle == goal:
         print("The puzzle is already solved")
-        return
+        return [puzzle], 0
 
-    visited_states = 0
+    N = int(math.sqrt(len(puzzle)))
+    move_table = build_move_table(N)
 
-    # Initialize the closed list (visited cells)
+    # Open and closed sets
+    open_list = []
+    open_dict = {}
     closed_list = set()
 
     # Initialize the start cell details
-    board_details = Board(puzzle)
-    board_details.f = 0
-    board_details.g = 0
-    board_details.parent = None
+    h0 = heuristic(puzzle, goal, N)
+    start = Board(state=puzzle, g=0, f=h0, parent=None)
+    heapq.heappush(open_list, start)
+    open_dict[puzzle] = start
 
-    # Initialize the open list (cells to be visited) with the start cell
-    open_list = []
-    heapq.heappush(open_list, board_details)
-
-    # Initialize the open dictionary for checking if board is on it
-    open_dict: dict[bytes, Board] = {}
-    k0 = board_key(puzzle)
-    open_dict[k0] = board_details
-
-    # key of goal board for comparing with others quicker
-    goal_key = board_key(goal)
+    # for statistics
+    visited_states = 0
 
     # Main loop of A* search algorithm
-    while len(open_list) > 0:
+    while open_list:
         current = heapq.heappop(open_list)
         visited_states += 1
-        # print(len(open_list) , end=", ")
-        #pretty_print(current.board)
 
-        key_curr = board_key(current.board)
-        open_dict.pop(key_curr, None)
-        closed_list.add(key_curr)
+        if current.state == goal:
+            return get_path(current), visited_states
 
-        for neighbour in get_neighbours(current.board):
-            key = board_key(neighbour)
-            if key == goal_key:
-                # print("The puzzle is solved")
-                last_board = Board(neighbour)
-                last_board.parent = current
-                return get_path(last_board), visited_states
+        # Remove from open_dict and add to closed_list
+        open_dict.pop(current.state, None)
+        closed_list.add(current.state)
+
+        for neighbor in get_neighbors(current.state, move_table):
+
 
             # complexity of searching in set() is O(1)
-            if key not in closed_list:
-                # skip the neighbour that is a parent of current board
-                if current.parent is not None and np.array_equal(neighbour, current.parent.board):
-                    continue
-                #print("b", end='')
+            if neighbor in closed_list:
+                continue
 
-                # Calculate the new f, g, and h values
-                g_new = current.g + 1
-                h_new = heuristic(neighbour, goal)
-                f_new = g_new + h_new
+            # Calculate the new f, g, and h values
+            g_new = current.g + 1
+            h_new = heuristic(neighbor, goal, N)
+            f_new = g_new + h_new
 
-                #If the cell is not in the open list or the new f value is smaller
-                existing = open_dict.get(key)
-                if existing is None or f_new < existing.f:
-                    #print(g_new, " ", h_new, " ", f_new)
+            # If the cell is not in the open list or the new f value is smaller
+            existing = open_dict.get(neighbor)
+            if existing is None or f_new < existing.f:
+                new_board = Board(state=neighbor, g=g_new, f=f_new, parent=current)
+                heapq.heappush(open_list, new_board)
+                open_dict[neighbor] = new_board
 
-                    # Update the cell details
-                    new_board = Board(neighbour)
-                    new_board.f = f_new
-                    new_board.g = g_new
-                    new_board.parent = current
-
-                    # Add the cell to the open list
-                    heapq.heappush(open_list, new_board)
-
-        # if len(open_list) == 0:
-        #     print(get_path(current))
-
-    print("FAILED")
+    print("FAILED to find a solution")
+    return None, visited_states

@@ -1,8 +1,0 @@
-linear_manhattan_heuristic  Average statistics
-Visited states:  2893.58  Path length:  26.675
-walking_distance_heuristic  Average statistics
-Visited states:  2830.6132  Path length:  26.567
-manhattan_heuristic  Average statistics
-Visited states:  2950.0945  Path length:  26.6408
-linear_conflict_heuristic  Average statistics
-Visited states:  2934.5855  Path length:  26.65
