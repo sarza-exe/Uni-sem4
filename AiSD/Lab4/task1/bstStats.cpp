@@ -4,6 +4,7 @@
 #include <random>
 #include <fstream>
 #include <string>
+#include <queue>
 
 /*
 Przeprowadź eksperymenty badające złożoność dla dużych danych (po 20 testów dla
@@ -43,13 +44,22 @@ class BST {
 private:
     Node* root;
 
-    int height(Node* node) {
-        if (!node) return 0;
-        cnt_pointer_reads += 1;  // read node->left
-        int hl = height(node->left);
-        cnt_pointer_reads += 1;  // read node->right
-        int hr = height(node->right);
-        return std::max(hl, hr) + 1;
+    int height_iterative() {
+        if (!root) return 0;
+        std::queue<Node*> q;
+        q.push(root);
+        int h = 0;
+        while (!q.empty()) {
+            int sz = q.size();
+            while (sz--) {
+                Node* u = q.front(); q.pop();
+                cnt_pointer_reads += 2;
+                if (u->left)  q.push(u->left);
+                if (u->right) q.push(u->right);
+            }
+            ++h;
+        }
+        return h;
     }
 
     Node* insert(Node* root, int x){
@@ -66,20 +76,24 @@ private:
         while (curr != NULL) {
             parent = curr;
             cnt_pointer_reads += 1;
+            cnt_comparisons += 1;
             if (curr->key > x)
                 curr = curr->left;
             else if (curr->key < x){
                 cnt_pointer_reads += 1;
+                cnt_comparisons += 1;
                 curr = curr->right;
             }
             else{
                 cnt_pointer_reads += 1;
+                cnt_comparisons += 1;
                 return root;
             }
         }
 
         // If x is smaller, make it left child, else right child
         cnt_pointer_reads += 1;
+        cnt_comparisons += 1;
         if (parent->key > x)
             parent->left = temp;
         else
@@ -105,9 +119,11 @@ private:
         // Check if key in tree 
         // prev points to the parent of the key to be deleted.
         cnt_pointer_reads += 1;
+        cnt_comparisons += 1;
         while (curr != NULL && curr->key != key) {
             prev = curr;
             cnt_pointer_reads += 2;
+            cnt_comparisons += 1;
             if (key < curr->key)
                 curr = curr->left;
             else
@@ -196,7 +212,7 @@ public:
     }
 
     int height() {
-        return height(root);
+        return height_iterative();
     }
 };
 
@@ -229,7 +245,6 @@ int main() {
 
             for (int t = 0; t < trials; ++t) {
                 reset_counters();
-                std::cout << "IT'S TRIAL " << t << " BITCHES\n";
                 BST tree;
 
                 // Przygotuj sekwencję do wstawiania
@@ -248,7 +263,7 @@ int main() {
                     uint64_t before_w = cnt_pointer_writes;
 
                     tree.insert(k);
-                    int h = 0; //tree.height();
+                    int h = tree.height();
 
                     uint64_t dc = cnt_comparisons - before_c;
                     uint64_t dr = cnt_pointer_reads - before_r;
@@ -278,7 +293,7 @@ int main() {
                     uint64_t before_w = cnt_pointer_writes;
 
                     tree.remove(k);
-                    int h = 0; //tree.height();
+                    int h = tree.height();
 
                     uint64_t dc = cnt_comparisons - before_c;
                     uint64_t dr = cnt_pointer_reads - before_r;
@@ -294,6 +309,7 @@ int main() {
                 writes_rem.push_back(sum_wr / n); writes_rem.push_back(max_wr);
                 height_rem.push_back(sum_hr2 / n); height_rem.push_back(max_hr2);
             }
+            std::cout << "N = " << n << " BITCHES\n";
 
             // Zapis wyników do CSV
             std::string scname = (scen == INCR_SEQ) ? "increasing_insert" : "random_insert";

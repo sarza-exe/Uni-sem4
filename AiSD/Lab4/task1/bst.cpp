@@ -3,6 +3,10 @@
 #include <vector>
 #include <random>
 
+static constexpr const char* RESET_COLOR = "\033[0m";
+static constexpr const char* BLUE_COLOR  = "\033[34m";
+static constexpr const char* RED_COLOR   = "\033[31m";
+
 // Structure of a node in BST
 struct Node {
     int key;
@@ -79,10 +83,11 @@ private:
     {
         if( node != nullptr )
         {
+            const char* color = isLeft ? BLUE_COLOR : RED_COLOR;
             std::cout << prefix;
             std::cout << (isLeft ? "├──" : "└──" );
             // print the value of the node
-            std::cout << node->key << std::endl;
+            std::cout << color << node->key << RESET_COLOR << "\n";
             // enter the next tree level - left and right branch
             print( prefix + (isLeft ? "│   " : "    "), node->left, true);
             print( prefix + (isLeft ? "│   " : "    "), node->right, false);
