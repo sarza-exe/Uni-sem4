@@ -52,24 +52,39 @@ private:
         return std::max(hl, hr) + 1;
     }
 
-    Node* insert(Node* node, int k) {
-        if (node == nullptr) {
-            Node* nn = new Node(k);
-            cnt_pointer_writes += 1; // write
-            return nn;
-        }
-        cnt_comparisons += 1;
-        cnt_pointer_reads += 1; // read node->key
-        if (k < node->key) {
+    Node* insert(Node* root, int x){
+        cnt_pointer_writes += 1;
+        Node* temp = new Node(x);
+
+        // If tree is empty
+        if (root == NULL)
+            return temp;
+
+        // Find the node who is going to have the new node temp as
+        // it child. The parent node is mainly going to be a leaf node
+        Node *parent = NULL, *curr = root;
+        while (curr != NULL) {
+            parent = curr;
             cnt_pointer_reads += 1;
-            node->left = insert(node->left, k);
-            cnt_pointer_writes += 1;
-        } else {
-            cnt_pointer_reads += 1;
-            node->right = insert(node->right, k);
-            cnt_pointer_writes += 1;
+            if (curr->key > x)
+                curr = curr->left;
+            else if (curr->key < x){
+                cnt_pointer_reads += 1;
+                curr = curr->right;
+            }
+            else{
+                cnt_pointer_reads += 1;
+                return root;
+            }
         }
-        return node;
+
+        // If x is smaller, make it left child, else right child
+        cnt_pointer_reads += 1;
+        if (parent->key > x)
+            parent->left = temp;
+        else
+            parent->right = temp;
+        return root;
     }
 
     // find min in subtree
@@ -83,49 +98,86 @@ private:
         return node;
     }
 
-    Node* remove(Node* node, int k) {
-        if (!node) return nullptr;
-        cnt_comparisons += 1;
+    Node* remove(Node* root, int key){
+        Node* curr = root;
+        Node* prev = NULL;
+
+        // Check if key in tree 
+        // prev points to the parent of the key to be deleted.
         cnt_pointer_reads += 1;
-        if (k < node->key) {
+        while (curr != NULL && curr->key != key) {
+            prev = curr;
+            cnt_pointer_reads += 2;
+            if (key < curr->key)
+                curr = curr->left;
+            else
+                curr = curr->right;
+        }
+
+        // Key not present
+        if (curr == NULL) 
+            return root;
+
+        // Check if node to be deleted has at most one child.
+        cnt_pointer_reads += 2;
+        if (curr->left == NULL || curr->right == NULL) {
+
+            // newCurr will replace the node to be deleted.
+            Node* newCurr;
+
+            cnt_pointer_reads += 2;
+            if (curr->left == NULL)
+                newCurr = curr->right;
+            else
+                newCurr = curr->left;
+
+            // node to be deleted is the root.
+            if (prev == NULL)
+                return newCurr;
+
             cnt_pointer_reads += 1;
-            node->left = remove(node->left, k);
             cnt_pointer_writes += 1;
+            if (curr == prev->left)
+                prev->left = newCurr;
+            else
+                prev->right = newCurr;
+
+            // free memory of the node to be deleted.
+            delete curr;
         }
-        else {
-            cnt_comparisons += 1;
+        else { // node to be deleted has two children.
+            // Compute the inorder successor
+            Node* p = NULL;
             cnt_pointer_reads += 1;
-            if (k > node->key) {
+            Node* temp = curr->right;
+            while (temp->left != NULL) {
                 cnt_pointer_reads += 1;
-                node->right = remove(node->right, k);
-                cnt_pointer_writes += 1;
+                p = temp;
+                temp = temp->left;
             }
-            else {
-                if (!node->left && !node->right) {
-                    delete node;
-                    return nullptr;
-                }
-                else if (!node->left) {
-                    Node* tmp = node->right;
-                    delete node;
-                    return tmp;
-                }
-                else if (!node->right) {
-                    Node* tmp = node->left;
-                    delete node;
-                    return tmp;
-                }
-                else {
-                    Node* tmp = findMin(node->right);
-                    cnt_pointer_reads += 1;
-                    node->key = tmp->key;
-                    cnt_pointer_writes += 1;
-                    node->right = remove(node->right, tmp->key);
-                    cnt_pointer_writes += 1;
-                }
-            }
+            cnt_pointer_reads += 1;
+
+            // check if the parent of the inorder
+            // successor is the curr or not(i.e. curr=
+            // the node which has the same data as
+            // the given data by the user to be
+            // deleted). if it isn't, then make the
+            // the left child of its parent equal to
+            // the inorder successor'd right child.
+            cnt_pointer_reads += 1;
+            cnt_pointer_writes += 1;
+            if (p != NULL)
+                p->left = temp->right;
+            else
+                curr->right = temp->right;
+
+            cnt_pointer_reads += 1;
+            cnt_pointer_writes += 1;
+            curr->key = temp->key;
+            
+            delete temp;
         }
-        return node;
+        return root;
     }
 
 public:
@@ -196,7 +248,7 @@ int main() {
                     uint64_t before_w = cnt_pointer_writes;
 
                     tree.insert(k);
-                    int h = tree.height();
+                    int h = 0; //tree.height();
 
                     uint64_t dc = cnt_comparisons - before_c;
                     uint64_t dr = cnt_pointer_reads - before_r;
@@ -226,7 +278,7 @@ int main() {
                     uint64_t before_w = cnt_pointer_writes;
 
                     tree.remove(k);
-                    int h = tree.height();
+                    int h = 0; //tree.height();
 
                     uint64_t dc = cnt_comparisons - before_c;
                     uint64_t dr = cnt_pointer_reads - before_r;

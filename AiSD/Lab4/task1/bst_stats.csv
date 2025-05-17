@@ -1,7 +1,0 @@
-scenario,n,op,avg_comp,max_comp,avg_reads,max_reads,avg_writes,max_writes,avg_height,max_height
-increasing_insert,10000,insert,4999,9999,20000,39998,5003,10003,5000,10000
-increasing_insert,10000,remove,4994,19652,17489,49324,2497,9826,4999,9999
-random_insert,10000,insert,14,27,10030,20046,18,31,25,28
-random_insert,10000,remove,22,44,10036,20059,15,28,25,28
-increasing_insert,20000,insert,9999,19999,40000,79998,10003,20003,10000,20000
-increasing_insert,20000,remove,9982,39764,34972,99533,4991,19882,9999,19999
