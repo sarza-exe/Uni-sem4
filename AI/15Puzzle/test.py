@@ -1,5 +1,5 @@
 from puzzle import *
-from heuristics import manhattan_heuristic
+from heuristics import manhattan_heuristic, linear_manhattan_heuristic
 from solve import solve
 
 N = 4
@@ -12,7 +12,7 @@ goal = generate_default_goal(N)
 puzzle1 = generate_puzzle_by_random_moves(4, 50)
 print("Generated puzzle:")
 print(puzzle1)
-path, visited = solve(puzzle1, goal, manhattan_heuristic)
+path, visited = solve(puzzle1, goal, linear_manhattan_heuristic)
 for p in path:
     pretty_print(p)
 print("Visited states: ", visited)

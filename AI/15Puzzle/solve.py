@@ -1,7 +1,6 @@
 import heapq
 import math
 from check_solvability import is_solvable
-import numpy as np
 from puzzle import build_move_table
 
 class Board:
