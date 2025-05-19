@@ -61,9 +61,13 @@ private:
     }
 
     void leftRotate(Node* x){
+        cnt_pointer_reads += 9;
+        cnt_pointer_writes += 4;
         Node* y = x->right;
         x->right = y->left;
         if(y->left != NIL){
+            cnt_pointer_reads += 1;
+            cnt_pointer_writes += 1;
             y->left->parent = x;
         }
         y->parent = x->parent;
@@ -71,9 +75,13 @@ private:
             root = y;
         } 
         else if(x == x->parent->left){
+            cnt_pointer_reads += 4;
+            cnt_pointer_writes += 1;
             x->parent->left = y;
         } 
         else{
+            cnt_pointer_reads += 4;
+            cnt_pointer_writes += 1;
             x->parent->right = y;
         }
         y->left = x;
@@ -81,9 +89,13 @@ private:
     }
 
     void rightRotate(Node* y){
+        cnt_pointer_reads += 9;
+        cnt_pointer_writes += 4;
         Node* x = y->left;
         y->left = x->right;
         if(x->right != NIL){
+            cnt_pointer_reads += 1;
+            cnt_pointer_writes += 1;
             x->right->parent = y;
         }
         x->parent = y->parent;
@@ -91,9 +103,13 @@ private:
             root = x;
         } 
         else if(y == y->parent->left){
+            cnt_pointer_reads += 4;
+            cnt_pointer_writes += 1;
             y->parent->left = x;
         } 
         else{
+            cnt_pointer_reads += 4;
+            cnt_pointer_writes += 1;
             y->parent->right = x;
         }
         x->right = y;
@@ -102,43 +118,58 @@ private:
     
     void insertFixup(Node* z){
         while(z->parent->color == RED){
+            cnt_pointer_reads += 6;
             if(z->parent == z->parent->parent->left){
+                cnt_pointer_reads += 4;
                 Node* y = z->parent->parent->right;
                 if(y->color == RED){
+                    cnt_pointer_reads += 8;
+                    cnt_pointer_writes += 3;
                     z->parent->color = BLACK;
                     y->color = BLACK;
                     z->parent->parent->color = RED;
                     z = z->parent->parent;
                 }
                 else if(z == z->parent->right){
+                    cnt_pointer_reads += 3;
                     z = z->parent;
                     leftRotate(z);
                 }
                 else{
+                    cnt_pointer_reads += 9;
+                    cnt_pointer_writes += 2;
                     z->parent->color = BLACK;
                     z->parent->parent->color = RED;
                     rightRotate(z->parent->parent);
                 }
             }
             else{
+                cnt_pointer_reads += 4;
                 Node* y = z->parent->parent->left;
                 if(y->color == RED){
+                    cnt_pointer_reads += 8;
+                    cnt_pointer_writes += 3;
                     z->parent->color = BLACK;
                     y->color = BLACK;
                     z->parent->parent->color = RED;
                     z = z->parent->parent;
                 }
                 else if(z == z->parent->left){
+                    cnt_pointer_reads += 3;
                     z = z->parent;
                     rightRotate(z);
                 }
                 else{
+                    cnt_pointer_reads += 9;
+                    cnt_pointer_writes += 2;
                     z->parent->color = BLACK;
                     z->parent->parent->color = RED;
                     leftRotate(z->parent->parent);
                 }
             }
         }
+        cnt_pointer_reads += 1;
+        cnt_pointer_writes += 1;
         root->color = BLACK;
     }
 
@@ -148,34 +179,47 @@ private:
         Node* z = new Node(k);
         while (x != NIL){
             y = x;
-            if(z->key < x->key)
-                x = x->left;
+            cnt_comparisons += 1;
+            cnt_pointer_reads += 1;
+            if(z->key < x->key) x = x->left;
             else x = x->right;
         }
+        cnt_pointer_reads += 1;
         z->parent = y;
         if(y == NIL)
             root = z;
-        else if (z->key < y->key)
+        else if (z->key < y->key){
+            cnt_comparisons += 1;
+            cnt_pointer_reads += 1;
             y->left = z;
-        else y->right = z;
+        }
+        else {
+            cnt_comparisons += 1;
+            cnt_pointer_reads += 1;
+            y->right = z;
+        }
         insertFixup(z);
     }
 
     Node* minimum(Node* x) {
         while (x->left != NIL) {
             x = x->left;
+            cnt_pointer_reads += 2;
         }
         return x;
     }
 
     void transplant(Node* u, Node* v){
+        cnt_pointer_reads += 3;
         if(u->parent == NIL){
             root = v;
         }
         else if(u == u->parent->left){
+            cnt_pointer_reads += 4;
             u->parent->left = v;
         }
         else{
+            cnt_pointer_reads += 4;
             u->parent->right = v;
         }
         v->parent = u->parent;
@@ -183,19 +227,30 @@ private:
 
     void deleteFixup(Node* x){
         while (x != root && x->color == BLACK) {
+            cnt_pointer_reads += 3;
             if (x == x->parent->left) {
+                cnt_pointer_reads += 3;
                 Node* w = x->parent->right;
                 if (w->color == RED) { // case 1
+                    cnt_pointer_reads += 6;
+                    cnt_pointer_writes += 2;
                     w->color = BLACK;
                     x->parent->color = RED;
                     leftRotate(x->parent);
                     w = x->parent->right;
                 }
+                cnt_pointer_reads += 4;
                 if (w->left->color == BLACK && w->right->color == BLACK) { // case 2
+                    cnt_pointer_reads += 2;
+                    cnt_pointer_writes += 1;
                     w->color = RED;
                     x = x->parent;
                 } else {
+                    cnt_pointer_reads += 10;
+                    cnt_pointer_writes += 3;
                     if (w->right->color == BLACK) { // case 3
+                        cnt_pointer_writes += 2;
+                        cnt_pointer_reads += 5;
                         w->left->color = BLACK;
                         w->color = RED;
                         rightRotate(w);
@@ -208,18 +263,28 @@ private:
                     x = root;
                 }
             } else { // mirror image: left and right exchanged
+                cnt_pointer_reads += 3;
                 Node* w = x->parent->left;
                 if (w->color == RED) { // case 1
+                    cnt_pointer_reads += 6;
+                    cnt_pointer_writes += 2;
                     w->color = BLACK;
                     x->parent->color = RED;
                     rightRotate(x->parent);
                     w = x->parent->left;
                 }
+                cnt_pointer_reads += 4;
                 if (w->right->color == BLACK && w->left->color == BLACK) { // case 2
+                    cnt_pointer_reads += 2;
+                    cnt_pointer_writes += 1;
                     w->color = RED;
                     x = x->parent;
                 } else {
+                    cnt_pointer_reads += 10;
+                    cnt_pointer_writes += 3;
                     if (w->left->color == BLACK) { // case 3
+                        cnt_pointer_writes += 2;
+                        cnt_pointer_reads += 5;
                         w->right->color = BLACK;
                         w->color = RED;
                         leftRotate(w);
@@ -250,33 +315,44 @@ public:
     void remove(int key){ // page 324
         Node* z = root;
         while (z != NIL && z->key != key) {
+            cnt_pointer_reads += 3;
+            cnt_comparisons += 1;
             if (key < z->key) z = z->left;
             else z = z->right;
         }
 
         if (z == NIL)  return;
+        cnt_comparisons += 1;
 
         Node* y = z;
+        cnt_pointer_reads += 1;
         Color yOriginalColor = y->color;
         Node* x = NIL;
 
         if (z->left == NIL) {
+            cnt_pointer_reads += 3;
             x = z->right;
             transplant(z, z->right);
         }
         else if (z->right == NIL) {
+            cnt_pointer_reads += 4;
             x = z->left;
             transplant(z, z->left);
         }
         else {
+            cnt_pointer_reads += 12;
+            cnt_pointer_writes += 3;
             // z has 2 children
             y = minimum(z->right);
             yOriginalColor = y->color;
             x = y->right;
 
             if (y->parent == z) {
+                cnt_pointer_reads += 1;
                 x->parent = y;
             } else {
+                cnt_pointer_reads += 5;
+                cnt_pointer_writes += 2;
                 transplant(y, y->right);
                 y->right = z->right;
                 y->right->parent = y;
@@ -312,8 +388,6 @@ std::vector<int> random_permutation(int n) {
 int main() {
     //prevent windows from sleeping
     SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
-
-    //TODO: COUNTERSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 
     std::ofstream csv("bst_stats.csv");
     csv << "scenario,n,op,avg_comp,max_comp,avg_reads,max_reads,avg_writes,max_writes,avg_height,max_height\n";
