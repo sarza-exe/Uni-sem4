@@ -20,10 +20,13 @@ module.exports = (err, req, res, next) => {
     } else {
       res.status(statusCode);
     }
-  
-    if (process.env.NODE_ENV !== 'production') {
-      response.stack = err.stack;
-    }
+
+    // Handle Mongoose cast errors (invalid ObjectId, etc.)
+  if (err.name === 'CastError') {
+    return res.status(400).json({ error: `Invalid ${err.path}: ${err.value}` });
+  }
   
     res.json(response);
   };
+
+  
