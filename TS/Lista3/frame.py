@@ -26,22 +26,28 @@ def compute_crc(data_bits: str) -> str:
     # add 0's at the beggining to get length = 16
     return f'{crc:016b}'
 
+FRAMELENGTH = 100
+
 def frame_data(input_path: str, output_path: str):
+    frames = 0
     with open(input_path) as f:
         raw = f.read().strip()  # oczekujemy tylko '0' i '1'
 
     with open(output_path, 'w') as f_out:
-        for i in range(0, len(raw), 32):
-            chunk = raw[i:i+32]
-            if len(chunk) < 32:
+        for i in range(0, len(raw), FRAMELENGTH):
+            chunk = raw[i:i+FRAMELENGTH]
+            if len(chunk) < FRAMELENGTH:
                 # Optionally pad with zeros to make it 32 bits
-                chunk = chunk.ljust(32, '0')
+                chunk = chunk.ljust(FRAMELENGTH, '0')
 
             crc = compute_crc(chunk)
             data = chunk + crc
             stuffed = bit_stuff(data)
             frame = FLAG + stuffed + FLAG
-            f_out.write(frame + '\n')  # Each frame on a new line
+            frames += 1
+            f_out.write(frame)  # Each frame on a new line
+
+        print(f"generated frames {frames}")
 
 if len(sys.argv) >= 3:
     arg1 = sys.argv[1]
@@ -51,5 +57,4 @@ if len(sys.argv) >= 3:
 else:
     print("Podaj plik wejsciowy i wyjsciowy!")
 
-frame_data("z.txt", "w.txt") # example (z, w)
-print(len("11010101100000110011111010111110111000110100011010"))
+frame_data(arg1, arg2) # example (z, w)
