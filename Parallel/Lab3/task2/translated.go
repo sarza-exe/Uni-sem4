@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 const Nr_Of_Processes int = 15
 
-const Min_Steps int = 10
+const Min_Steps int = 50
 const Max_Steps int = 100
 
 const Min_Delay time.Duration = 10000000
@@ -24,16 +25,36 @@ const (
 	ExitProtocol
 )
 
-func (ps Process_State) String() string {
-	return [...]string{"LocalSection", "EntryProtocol", "CriticalSection", "ExitProtocol"}[ps]
-}
-
 const Board_Width int = Nr_Of_Processes
 const Board_Height int = int(ExitProtocol) + 1
 
 var Start_Time = time.Now()
 
 // Types, procedures and functions
+
+type Max_Ticket_Atom struct {
+	ticket int32
+}
+
+// Set atomically does: ticket = max(ticket, newTicket)
+func (m *Max_Ticket_Atom) Set(newTicket int32) {
+	for {
+		old := atomic.LoadInt32(&m.ticket)
+		if newTicket <= old {
+			return
+		}
+		if atomic.CompareAndSwapInt32(&m.ticket, old, newTicket) {
+			return
+		}
+		// else: someone else changed it in the meantime; retry
+	}
+}
+
+func (m *Max_Ticket_Atom) Get() int32 {
+	return atomic.LoadInt32(&m.ticket)
+}
+
+var Max_Ticket Max_Ticket_Atom
 
 // Postitions on the board
 type Position_Type struct {
@@ -84,14 +105,15 @@ func Printer(printerChan chan Traces_Sequence_Type, Wait_for_Finish *sync.WaitGr
 
 	fmt.Printf("-1 %d %d %d ", Nr_Of_Processes, Board_Width, Board_Height)
 
-	for st := LocalSection; st <= ExitProtocol; st++ {
-		fmt.Printf("%s;", st.String())
-	}
+	fmt.Printf("LocalSection;EntryProtocol;CriticalSection;ExitProtocol;")
 	// EXTRA_LABEL: strip leading space like Ada’s Image would
-	//mt := maxTicket.Get()
-	//fmt.Printf("MAX_TICKET=%d;\n", mt)
+	fmt.Printf("MAX_TICKET=%d;\n", Max_Ticket.Get())
 
 }
+
+// not atomic but happens before any concurrency
+var Choosing = [Nr_Of_Processes]int32{0}
+var Number = [Nr_Of_Processes]int32{0}
 
 type Process_Type struct {
 	Id       int
@@ -100,16 +122,18 @@ type Process_Type struct {
 }
 
 type Process_Task_Type struct {
-	Time_Stamp  time.Duration
-	Nr_of_Steps int
-	Traces      Traces_Sequence_Type
-	Process     Process_Type
+	Time_Stamp       time.Duration
+	Nr_of_Steps      int
+	Traces           Traces_Sequence_Type
+	Process          Process_Type
+	Local_Max_Ticket int32
 }
 
 func (t *Process_Task_Type) Init(Id int, Symbol rune, wg *sync.WaitGroup) {
 	t.Process.Id = Id
 	t.Process.Symbol = Symbol
 	t.Traces.Last = -1
+	t.Local_Max_Ticket = 0
 
 	t.Process.Position = Position_Type{X: Id, Y: int(LocalSection)}
 
@@ -130,7 +154,32 @@ func (t *Process_Task_Type) Start(printerChan chan Traces_Sequence_Type, Wait_fo
 		// LOCAL_SECTION - end
 
 		t.Change_State(EntryProtocol) // starting ENTRY_PROTOCOL
-		// implement the ENTRY_PROTOCOL here ...
+
+		atomic.StoreInt32(&Choosing[t.Process.Id], 1)
+		atomic.StoreInt32(&Number[t.Process.Id], 1+Curr_Max_Ticket())
+		atomic.StoreInt32(&Choosing[t.Process.Id], 0)
+		ticket := atomic.LoadInt32(&Number[t.Process.Id])
+		if ticket > t.Local_Max_Ticket {
+			atomic.StoreInt32(&t.Local_Max_Ticket, ticket)
+		}
+		for j := 0; j < Nr_Of_Processes; j++ {
+			if j != t.Process.Id {
+				for atomic.LoadInt32(&Choosing[j]) != 0 {
+				}
+
+				for {
+					jNumber := atomic.LoadInt32(&Number[j])
+					myNumber := atomic.LoadInt32(&Number[t.Process.Id])
+
+					if jNumber == 0 ||
+						myNumber < jNumber ||
+						(myNumber == jNumber && t.Process.Id < j) {
+						break
+					}
+				}
+			}
+		}
+
 		t.Change_State(CriticalSection) /// starting CRITICAL_SECTION
 
 		// CRITICAL_SECTION - start
@@ -138,13 +187,26 @@ func (t *Process_Task_Type) Start(printerChan chan Traces_Sequence_Type, Wait_fo
 		// CRITICAL_SECTION - end
 
 		t.Change_State(ExitProtocol) // starting EXIT_PROTOCOL
-		// implement the EXIT_PROTOCOL here ...
+		atomic.StoreInt32(&Number[t.Process.Id], 0)
+		time.Sleep(5)                // to avoid to timestamps at the same time
 		t.Change_State(LocalSection) // starting LOCAL_SECTION
 
 	}
+	Max_Ticket.Set(t.Local_Max_Ticket)
 	// When finished, send the report to the Printer.
 	printerChan <- t.Traces
 	defer Wait_for_Finish.Done() // Mark the task as done. Defer waits for func to complete
+}
+
+func Curr_Max_Ticket() int32 {
+	var current int32 = 0
+	for index := range Number {
+		val := atomic.LoadInt32(&Number[index])
+		if val > current {
+			current = val
+		}
+	}
+	return current
 }
 
 func (t *Process_Task_Type) Change_State(State Process_State) {
