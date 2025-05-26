@@ -7,7 +7,7 @@ procedure  Mutex_Template is
 
 -- Processes 
 
-  Nr_Of_Processes : constant Integer :=15;
+  Nr_Of_Processes : constant Integer := 2;
 
   Min_Steps : constant Integer := 50 ;
   Max_Steps : constant Integer := 100 ;
@@ -44,31 +44,6 @@ procedure  Mutex_Template is
     X: Integer range 0 .. Board_Width - 1; 
     Y: Integer range 0 .. Board_Height - 1; 
   end record;	   
-
-  -- Max Ticket
-
-  protected type Max_Ticket_Type is
-    procedure Set(New_Ticket : in Integer);
-    function Get return Integer;
-  private
-    Ticket : Integer := 0;
-  end Max_Ticket_Type;
-
-  protected body Max_Ticket_Type is
-   procedure Set(New_Ticket : in Integer) is
-   begin
-      if New_Ticket > Ticket then
-        Ticket := New_Ticket;
-      end if;
-   end Set;
-
-   function Get return Integer is
-   begin
-      return Ticket;
-   end Get;
-  end Max_Ticket_Type;
-
-  Max_Ticket : Max_Ticket_Type;
 
   -- traces of Processes
   type Trace_Type is record 	      
@@ -135,30 +110,24 @@ procedure  Mutex_Template is
     for I in Process_State'Range loop
       Put( I'Image &";" );
     end loop;
-    -- Place labels with extra info here (e.g. "MAX_TICKET=...;" for Backery). 
-    -- 'Image produces space in front of a number. This removes it
-    declare
-      S : constant String := Integer'Image(Max_Ticket.Get);
-    begin
-      Put_Line("MAX_TICKET=" & S(S'First+1 .. S'Last) & ";");
-    end;
+    Put_Line("EXTRA_LABEL;"); -- Place labels with extra info here (e.g. "MAX_TICKET=...;" for Backery). 
 
   end Printer;
 
   -- For an atomic object (including an atomic component) all reads 
   -- and updates of the object as a whole are indivisible.
-  type Bool_Array is array (0 .. Nr_Of_Processes-1) of Boolean
+  type Bool_Array is array (0 .. 1) of Boolean
     with Atomic_Components => True;
 
-  type Int_Array is array (0 .. Nr_Of_Processes-1) of Integer
-    with Atomic_Components => True;
+  Wants_To_Enter : Bool_Array := (others => False);
+  Turn : Integer range 0 .. 1 := 0;
 
-  Choosing : Bool_Array := (others => False);
-  Number   : Int_Array  := (others => 0);
+  pragma Atomic(Turn);
 
   -- Processes
   type Process_Type is record
     Id: Integer;
+    Other_Id: Integer;
     Symbol: Character;
     Position: Position_Type;    
   end record;
@@ -175,19 +144,6 @@ procedure  Mutex_Template is
     Time_Stamp : Duration;
     Nr_of_Steps: Integer;
     Traces: Traces_Sequence_Type; 
-    Local_Max_Ticket : Integer := 0;
-
-    -- Max Ticket currently waiting
-    function Max return Integer is
-      Current : Integer := 0;
-    begin
-      for N in Number'Range loop
-        if Number(N) > Current then
-          Current := Number(N);
-        end if;
-      end loop;
-      return Current;
-    end Max;
 
     procedure Store_Trace is
     begin  
@@ -212,6 +168,7 @@ procedure  Mutex_Template is
     accept Init(Id: Integer; Seed: Integer; Symbol: Character) do
       Reset(G, Seed); 
       Process.Id := Id;
+      Process.Other_Id := (Id + 1) mod 2;
       Process.Symbol := Symbol;
       -- Initial position 
       Process.Position := (
@@ -237,25 +194,16 @@ procedure  Mutex_Template is
       -- LOCAL_SECTION - end
 
       Change_State( ENTRY_PROTOCOL ); -- starting ENTRY_PROTOCOL
-
-      -- choosing is set to true while we choose our number
-      Choosing(Process.Id) := true; 
-      Number(Process.Id) := 1 + Max;
-      Choosing(Process.Id) := false;
-      if Number(Process.Id) > Local_Max_Ticket then
-        Local_Max_Ticket := Number(Process.Id);
-      end if;
-      for J in 0 .. Nr_Of_Processes-1 loop
-        if J /= Process.Id then
-          loop exit when Choosing(J) = false; end loop;
-          loop exit when
-            (Number(J) = 0) or
-            (Number(Process.Id) < Number(J)) or
-            (Number(Process.Id) = Number(J) and Process.Id < J);
-          end loop;
-        end if;
+      
+      Wants_To_Enter(Process.Id) := True;
+      while Wants_To_Enter(Process.Other_Id) loop
+         if Turn /= Process.Id then
+            Wants_To_Enter(Process.Id) := False;
+            loop exit when Turn /= Process.Other_Id; end loop;
+            Wants_To_Enter(Process.Id) := True;
+         end if;
       end loop;
-
+ 
       Change_State( CRITICAL_SECTION ); -- starting CRITICAL_SECTION
 
       -- CRITICAL_SECTION - start
@@ -263,11 +211,13 @@ procedure  Mutex_Template is
       -- CRITICAL_SECTION - end
 
       Change_State( EXIT_PROTOCOL ); -- starting EXIT_PROTOCOL
-      Number(Process.Id) := 0;
+      
+      Turn := Process.Other_Id;
+      Wants_To_Enter(Process.Id) := False;
+
       Change_State( LOCAL_SECTION ); -- starting LOCAL_SECTION      
     end loop;
     
-    Max_Ticket.Set(Local_Max_Ticket);
     Printer.Report( Traces );
   end Process_Task_Type;
 

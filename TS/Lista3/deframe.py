@@ -31,19 +31,21 @@ def compute_crc(data_bits: str) -> str:
     return f'{crc:016b}'
 
 def deframe_data(input_path: str, output_path: str):
-    with open(input_path, 'r') as f_in, open(output_path, 'w') as f_out:
-        for line_num, frame in enumerate(f_in, start=1):
-            frame = frame.strip()
-
-            if not (frame.startswith(FLAG) and frame.endswith(FLAG)):
-                print(f"Ramka {line_num} niepoprawna (brak flag)")
-                continue
-
-            content = frame[len(FLAG):-len(FLAG)]  # bez flag
+    with open(input_path, 'r') as f:
+        raw = f.read().strip()  # oczekujemy tylko '0' i '1'
+    frames = [frame for frame in raw.split(FLAG) if frame]
+    total_frames = len(raw)//132
+    with open(output_path, 'w') as f_out:
+        line_num = 0
+        good_frames = 0
+        for frame in frames:
+            line_num += 1
+            content = frame
             unstuffed = bit_unstuff(content)
 
             if len(unstuffed) < 16:
                 print(f"Ramka {line_num} niepoprawna (za krótka)")
+                print(frame)
                 continue
 
             data_bits = unstuffed[:-16]
@@ -52,9 +54,13 @@ def deframe_data(input_path: str, output_path: str):
             calculated_crc = compute_crc(data_bits)
 
             if calculated_crc == crc_bits:
+                good_frames += 1
                 f_out.write(data_bits)
             else:
                 print(f"Ramka {line_num} niepoprawna (CRC)")
+
+        print(f"good frames: {good_frames}")
+        print(f"bad frames:  {total_frames-good_frames}")
 
 if len(sys.argv) >= 3:
     arg1 = sys.argv[1]

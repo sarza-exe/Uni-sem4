@@ -7,6 +7,10 @@ import (
 	. "time"
 )
 
+//# if kabel pusty nadaje
+//# else czekam na cisze
+//# nadaje i kontroluje stan kabla
+
 const EthernetLength = 30
 const Interval = Millisecond * 300
 const MaxWait = 50
