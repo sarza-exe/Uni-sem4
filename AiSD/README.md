@@ -2,7 +2,7 @@
 ##  Lista 1:
 Implementacja kolejki (FIFO), stosu (LIFO), listy jednokierunkowej cyklicznej oraz listy dwukierunkowej cyklicznej.
 
-## List 2:
+## Lista 2:
 Implementacja algorytmów sortowania:
 - Insertion Sort,
 - Quick Sort,
@@ -10,9 +10,15 @@ Implementacja algorytmów sortowania:
 - Custom Merge Sort Algorithm,
 - Dual-Pivot Quicksort with Count Strategy.
 
-## List 3:
+## Lista 3:
 Implementacja algorytmów:
 - Randomized Select,
 - Select (Median of Medians),
 - Binary Search,
 - Quick Sort and Dual-Pivot Quick Sort with pivot searching from Median of Medians algorithm.
+
+## Lista 4:
+Implementacja struktur danych:
+- Binary Search Tree
+- Red-Black Binary Search Tree
+- Splay Tree
