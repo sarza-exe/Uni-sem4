@@ -20,54 +20,60 @@ class BST {
 private:
     Node* root;
 
-    Node* insert(Node* node, int k) {
-        if (node == nullptr) {
-            return new Node(k);
-        }
-        if (k < node->key) {
-            node->left = insert(node->left, k);
-        } else {
-            node->right = insert(node->right, k);
-        }
-        return node;
-    }
+    Node* remove(Node* root, int key){
+        Node* curr = root;
+        Node* prev = NULL;
 
-    // Find min key for given node
-    Node* findMin(Node* node) {
-        while (node->left != nullptr)
-            node = node->left;
-        return node;
-    }
-
-    Node* remove(Node* node, int k) {
-        if (node == nullptr) {
-            return nullptr; // key not found
+        while (curr != NULL && curr->key != key) {
+            prev = curr;
+            if (key < curr->key)
+                curr = curr->left;
+            else
+                curr = curr->right;
         }
-        if (k < node->key) {
-            node->left = remove(node->left, k);
-        } else if (k > node->key) {
-            node->right = remove(node->right, k);
-        } else {
-            // found it
-            if (node->left == nullptr && node->right == nullptr) {
-                delete node;
-                return nullptr;
-            } else if (node->left == nullptr) {
-                Node* temp = node->right;
-                delete node;
-                return temp;
-            } else if (node->right == nullptr) {
-                Node* temp = node->left;
-                delete node;
-                return temp;
-            } else {
-                // two children - replace with min in right subtree
-                Node* temp = findMin(node->right);
-                node->key = temp->key;
-                node->right = remove(node->right, temp->key);
+
+        if (curr == NULL) 
+            return root;
+
+        // the node to be  deletedhas atmost one child.
+        if (curr->left == NULL || curr->right == NULL) {
+            Node* newCurr;
+
+            // if the left child does not exist.
+            if (curr->left == NULL)
+                newCurr = curr->right;
+            else
+                newCurr = curr->left;
+
+            // the node to be deleted is the root.
+            if (prev == NULL)
+                return newCurr;
+
+            if (curr == prev->left)
+                prev->left = newCurr;
+            else
+                prev->right = newCurr;
+
+            delete curr;
+        }
+        else { // node to be deleted has two children.
+            // Compute the inorder successor
+            Node* p = NULL;
+            Node* temp = curr->right;
+            while (temp->left != NULL) {
+                p = temp;
+                temp = temp->left;
             }
+            if (p != NULL)
+                p->left = temp->right;
+            else
+                curr->right = temp->right;
+
+            curr->key = temp->key;
+            
+            delete temp;
         }
-        return node;
+        return root;
     }
 
     int height(Node* node) {
@@ -94,12 +100,36 @@ private:
         }
     }
 
+    void inorder(Node* node) {
+        if (!node) return;
+        inorder(node->left);
+        std::cout << node->key << " ";
+        inorder(node->right);
+    }
+
 public:
     // constructor
     BST() : root(nullptr) {}
 
-    void insert(int k) {
-        root = insert(root, k);
+    void insert(int x){
+        Node* z = new Node(x);
+        Node *p = nullptr, *curr = root;
+
+        // Traverse the tree to find the insert location
+        while (curr != nullptr) {
+            p = curr;
+            if (curr->key > x)
+                curr = curr->left;
+            else {
+                curr = curr->right;
+            }
+        }
+
+        if (root == nullptr) root = z;
+        else if (p->key > x)
+            p->left = z;
+        else
+            p->right = z;
     }
 
     void remove(int k) {
@@ -110,20 +140,12 @@ public:
         return height(root);
     }
 
-    void inorder(Node* node) {
-        if (!node) return;
-        inorder(node->left);
-        std::cout << node->key << " ";
-        inorder(node->right);
-    }
-
     void printInorder() {
         inorder(root);
         std::cout << std::endl;
     }
 
-    void print()
-    {
+    void print(){
         print("", root, false);    
     }
 };

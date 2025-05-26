@@ -22,7 +22,7 @@ class ST {
 private:
     Node* root;
 
-    int height_iterative() {
+    int heightIterative() {
         if (!root) return 0;
         std::queue<Node*> q;
         q.push(root);
@@ -39,8 +39,80 @@ private:
         return h;
     }
 
-    void splay(Node* x){
+    void leftRotate(Node* x){
+        Node* y = x->right;
+        x->right = y->left;
+        if(y->left != nullptr){
+            y->left->parent = x;
+        }
+        y->parent = x->parent;
+        if(x->parent == nullptr){
+            root = y;
+        } 
+        else if(x == x->parent->left){
+            x->parent->left = y;
+        } 
+        else{
+            x->parent->right = y;
+        }
+        y->left = x;
+        x->parent = y;
+    }
 
+    void rightRotate(Node* y){
+        Node* x = y->left;
+        y->left = x->right;
+        if(x->right != nullptr){
+            x->right->parent = y;
+        }
+        x->parent = y->parent;
+        if(y->parent == nullptr){
+            root = x;
+        } 
+        else if(y == y->parent->left){
+            y->parent->left = x;
+        } 
+        else{
+            y->parent->right = x;
+        }
+        x->right = y;
+        y->parent = x;
+    }
+
+    // Splay node x to root
+    void splay(Node* x) {
+        while (x->parent) {
+            Node* y = x->parent;
+            Node* z = y->parent;
+            if (!z) {
+                // Single step
+                if (x == y->left) {
+                    rightRotate(y);  // Zig
+                } else {
+                    leftRotate(y);   // Zag
+                }
+            } else if ((x == y->left) && (y == z->left)) {
+                // Zig-Zig
+                rightRotate(z);
+                rightRotate(y);
+            } else if ((x == y->right) && (y == z->right)) {
+                // Zag-Zag
+                leftRotate(z);
+                leftRotate(y);
+            } else if ((x == y->right) && (y == z->left)) {
+                // Zig-Zag
+                leftRotate(y);
+                rightRotate(z);
+            } else if ((x == y->left) && (y == z->right)) {
+                // Zag-Zig
+                rightRotate(y);
+                leftRotate(z);
+            }
+            else {
+                std::cout << "Massive failure :D\n";
+                return;
+            }
+        }
     }
 
     Node* find(int k) {
@@ -92,22 +164,23 @@ public:
 
     void insert(int x){
         Node* z = new Node(x);
-
-        if (root == nullptr) root = z;
-
         Node *p = nullptr, *curr = root;
+
+        // Traverse the tree to find the insert location
         while (curr != nullptr) {
             p = curr;
             if (curr->key > x)
                 curr = curr->left;
-            else if (curr->key < x){
+            else {
                 curr = curr->right;
             }
-            else return;
         }
+
+        // Set the parent of the new node
         z->parent = p;
 
-        if (p->key > x)
+        if (root == nullptr) root = z;
+        else if (p->key > x)
             p->left = z;
         else
             p->right = z;
@@ -115,38 +188,39 @@ public:
         splay(z);
     }
 
-    void remove(int key){
-        Node* curr = find(key);
-        if (!curr) return;
+    void remove(int key) {
+        Node* z = find(key);
+        if (!z) return; // Key not found
 
-        Node* parent;  //remember parent of curr
-        if (!curr->left || !curr->right) {
-            // at most one child
-            Node* x = (curr->left ? curr->left : curr->right);
-            transplant(curr, x);
+        Node* parent = z->parent;
+
+        if (!z->left) {
+            transplant(z, z->right);
+        } else if (!z->right) {
+            transplant(z, z->left);
         } else {
-            // two children -> find successor
-            Node* succ = curr->right;
-            while (succ->left) succ = succ->left;
-
-            if (succ->parent != curr) {
-                // detach succ, replace with its right child
-                transplant(succ, succ->right);
-                // hook curr->right under succ
-                succ->right = curr->right;
-                succ->right->parent = succ;
+            Node* y = z->right;
+            while (y->left) {
+                y = y->left;
             }
-            // now replace curr with succ
-            transplant(curr, succ);
-            succ->left = curr->left;
-            succ->left->parent = succ;
+            if (y->parent != z) {
+                transplant(y, y->right);
+                y->right = z->right;
+                y->right->parent = y;
+            }
+            transplant(z, y);
+            y->left = z->left;
+            y->left->parent = y;
+            parent = y->parent;
         }
-        delete curr;
-        if(parent) splay(parent);
+        delete z;
+
+        if (parent)
+            splay(parent);
     }
 
     int height() {
-        return height_iterative();
+        return heightIterative();
     }
 
     void inorder(Node* node) {
@@ -198,7 +272,7 @@ int main() {
     }
 
 
-    //test 2
+    // test 2
     std::cout << "\n\nINSERTING RANDOM PERM OF 1, 2, ..., 30 AND THEN DELETING RANDOM PERM OF 1, 2, ..., 30\n";
     auto perm2 = random_permutation(n);
     for (int i = 0; i < n; ++i) {
