@@ -34,7 +34,7 @@ def deframe_data(input_path: str, output_path: str):
     with open(input_path, 'r') as f:
         raw = f.read().strip()  # oczekujemy tylko '0' i '1'
     frames = [frame for frame in raw.split(FLAG) if frame]
-    total_frames = len(raw)//132
+    total_frames = len(frames)
     with open(output_path, 'w') as f_out:
         line_num = 0
         good_frames = 0

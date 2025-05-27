@@ -123,7 +123,7 @@ def run_experiments():
         if reliability != -1:
             print(f'N x {scale}, Reliability: {reliability}')
         else:
-            print("dupadupadupadupa")
+            print("wrong")
 
     print("Eksperymenty dla różnych wartości c")
     for scale in [1, 5, 10, 30]:
@@ -132,7 +132,7 @@ def run_experiments():
         if reliability != -1:
             print(f'N x {scale}, Reliability: {reliability}')
         else:
-            print("dupadupadupadupa")
+            print("wrong")
 
     print("Eksperymenty dla różnych topologii")
     for extra_edges in [1, 5, 10, 30]:
@@ -153,7 +153,7 @@ def run_experiments():
         if reliability != -1:
             print(f'N x {scale}, Reliability: {reliability}')
         else:
-            print("dupadupadupadupa")
+            print("wrong")
 
 if __name__ == "__main__":
     run_experiments()
