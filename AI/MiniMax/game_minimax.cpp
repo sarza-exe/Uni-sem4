@@ -12,14 +12,10 @@
 
 #include "board.h"
 
-int minimax(int player, int depth) {
-    return 33;
-}
-
 class Position {
-private:
-    int boardState[5][5];
 public:
+    int boardState[5][5];
+    Position() {}
     Position(int board[5][5]) {
         for (int i = 0; i < 5; ++i)
             for (int j = 0; j < 5; ++j)
@@ -102,6 +98,34 @@ int minimax(const Position &position, int depth, int alpha, int beta, bool maxim
     }
 }
 
+// Helper to kick off search:
+int findBestMove(const Position &root, int depth, bool maximizingPlayer) {
+    int bestValue = maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
+    int alpha = std::numeric_limits<int>::min();
+    int beta  = std::numeric_limits<int>::max();
+    Position bestChild;
+
+    for (const Position &child : root.generateChildren(maximizingPlayer)) {
+        int val = minimax(child, depth - 1, alpha, beta, !maximizingPlayer);
+        if ((maximizingPlayer && val > bestValue) || (!maximizingPlayer && val < bestValue)){
+            bestValue = val;
+            bestChild = child;
+        }
+        if (maximizingPlayer) alpha = std::max(alpha, bestValue);
+        else beta  = std::min(beta,  bestValue);
+
+        if (beta <= alpha) break;
+    }
+
+    // Here you could return bestChild (if your Position stores the move),
+    // or store/return an index, etc. For illustration, we return its eval:
+    for (int i = 0; i < 5; i++)
+        for (int j = 0; j < 5; j++)
+            if(root.boardState[i][j] != bestChild.boardState[i][j]) return (i+1)*10+j+1;
+
+    return 0;
+}
+
 int main(int argc, char* argv[]) {
     if (argc != 6) {
         std::cerr << "Wrong number of arguments\n";
@@ -163,6 +187,9 @@ int main(int argc, char* argv[]) {
     std::sscanf(player_id.c_str(), "%d", &player);
     std::cout << "depth is " << depth << "\n";
 
+    bool is_maximizing = player == 2 ? false : true;
+    std::cout << "is_maxizing = " << is_maximizing << " for player " << player << "\n";
+
     while (!end_game) {
         std::memset(server_message, 0, sizeof(server_message));
         if (recv(sock, server_message, sizeof(server_message), 0) < 0) {
@@ -181,7 +208,8 @@ int main(int argc, char* argv[]) {
 
         if (msg == 0 || msg == 6) {
             // our turn
-            move = minimax(player, depth);
+            Position current_pos(board);
+            move = findBestMove(current_pos, depth, is_maximizing); 
             setMove(move, player);
 
             std::string reply = std::to_string(move);
