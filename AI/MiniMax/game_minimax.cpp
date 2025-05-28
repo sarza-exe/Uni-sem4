@@ -8,75 +8,126 @@
 #include <gsl/gsl_rng.h>
 #include <time.h>
 #include <vector>
-#include <random> //????
 
-#include "board.h"
+#include "position.h"
 
-class Position {
-public:
-    int boardState[5][5];
-    Position() {}
-    Position(int board[5][5]) {
-        for (int i = 0; i < 5; ++i)
-            for (int j = 0; j < 5; ++j)
-                boardState[i][j] = board[i][j];
-    }
-    int evaluate() const;
-    std::vector<Position> generateChildren(bool maximizingPlayer) const;
-    // … your own board/state data and constructors …
-};
+// Heuristic: count partial lines of length 5 without enemy
+        static const int lines[12][5][2] = {
+            // Rows
+            { {0,0},{0,1},{0,2},{0,3},{0,4} },
+            { {1,0},{1,1},{1,2},{1,3},{1,4} },
+            { {2,0},{2,1},{2,2},{2,3},{2,4} },
+            { {3,0},{3,1},{3,2},{3,3},{3,4} },
+            { {4,0},{4,1},{4,2},{4,3},{4,4} },
+            // Columns
+            { {0,0},{1,0},{2,0},{3,0},{4,0} },
+            { {0,1},{1,1},{2,1},{3,1},{4,1} },
+            { {0,2},{1,2},{2,2},{3,2},{4,2} },
+            { {0,3},{1,3},{2,3},{3,3},{4,3} },
+            { {0,4},{1,4},{2,4},{3,4},{4,4} },
+            // Diagonals
+            { {0,0},{1,1},{2,2},{3,3},{4,4} },
+            { {0,4},{1,3},{2,2},{3,1},{4,0} }
+        };
 
-int Position::evaluate() const {
-    if (winCheck(1)) return +1000;   // AI wins
-    if (winCheck(2)) return -1000;   // Opponent wins
-    if (loseCheck(1)) return -500;   // AI loses early
-    if (loseCheck(2)) return +500;   // Opponent loses early
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::uniform_int_distribution<int> bin(0, 40);
-    return bin(rng);  // Neutral
-}
+int Position::evaluate(bool maximizingPlayer) const {
+    int me  = maximizingPlayer ? 1 : 2;
+    int you = 3 - me;
 
-std::vector<Position> Position::generateChildren(bool maximizingPlayer) const {
-    std::vector<Position> children;
+    // 1) Terminal shortcuts
+    if (winningCheck(me))  return +10000;
+    if (winningCheck(you)) return -10000;
+    if (losingCheck(me))   return -10000;
+    if (losingCheck(you))  return +10000;
 
-    int player = maximizingPlayer ? 1 : 2;
+    int score = 0;
 
-    for (int i = 0; i < 5; ++i) {
-        for (int j = 0; j < 5; ++j) {
-            if (boardState[i][j] == 0) {
-                int newBoard[5][5];
-                
-                // Copy current board state
-                for (int x = 0; x < 5; ++x)
-                    for (int y = 0; y < 5; ++y)
-                        newBoard[x][y] = boardState[x][y];
-                
-                // Make the move
-                newBoard[i][j] = player;
+    // 2) Center control bonus
+    //    Encourage occupying central squares
+    constexpr int centerWeights[5][5] = {
+      { 1, 2, 3, 2, 1 },
+      { 2, 4, 6, 4, 2 },
+      { 3, 6, 9, 6, 3 },
+      { 2, 4, 6, 4, 2 },
+      { 1, 2, 3, 2, 1 }
+    };
+    for (int i = 0; i < 5; ++i)
+      for (int j = 0; j < 5; ++j)
+        if (boardState[i][j] == me)
+          score += centerWeights[i][j];
+        else if (boardState[i][j] == you)
+          score -= centerWeights[i][j];
 
-                // Create a new position and add it to children
-                children.emplace_back(newBoard);
-            }
+    // 3) Count all 4-length windows (potential wins) in each line
+    //    and all 3-length windows (immediate threats)
+    auto countWindows = [&](int length, int side) {
+      int w = 0;
+      for (auto &line : lines) {
+        // slide window of size `length` along the 5-cell line
+        for (int start = 0; start + length <= 5; ++start) {
+          bool hasEnemy = false;
+          int  cntMe    = 0;
+          for (int k = 0; k < length; ++k) {
+            int v = boardState[line[start + k][0]]
+                                [line[start + k][1]];
+            if (v == (3 - side)) { hasEnemy = true; break; }
+            if (v == side)       ++cntMe;
+          }
+          if (!hasEnemy) {
+            // assign score by how many of your stones in the window
+            if      (cntMe == length)        w += 100;  // already win
+            else if (cntMe == length - 1)    w += 20;   // immediate
+            else if (cntMe == length - 2)    w += 5;    // promising
+            else if (cntMe == 1)             w += 1;
+            else                              w += 0;
+          }
         }
-    }
+      }
+      return w;
+    };
 
-    return children;
+    // my potential 4-in-a-row vs opponent’s
+    int my4windows  = countWindows(4, me);
+    int your4windows= countWindows(4, you);
+    int my3windows  = countWindows(3, me);
+    int your3windows= countWindows(3, you);
+
+    score +=  50 * my4windows;
+    score -= 100 * your4windows;  // block opponent 4’s aggressively
+    score +=  10 * my3windows;
+    score -=  30 * your3windows;  // penalize their immediate threats
+
+    return score;
 }
 
 
-int minimax(const Position &position, int depth, int alpha, int beta, bool maximizingPlayer)
+int minimax(Position &position, int depth, int alpha, int beta, bool maximizingPlayer)
 {
-    // Terminal or depth-0: return evaluation
+    int player = maximizingPlayer ? 1 : 2;
+    int enemy = maximizingPlayer ? 2 : 1;
+
+    if (position.imminentWin(player)) return +10000 + depth;  // you have 3 in a 4-cell window with one empty
+    if (position.imminentWin(enemy)) return -10000 + depth;  // you have 3 in a 4-cell window with one empty
+    if (position.winningCheck(player)) return +10000 + depth; // win now is best
+    if (position.winningCheck(enemy)) return -10000 - depth; // you win next
+    if (position.losingCheck(player)) return -10000 - depth; // 3-in-a-row = instant loss
+    if (position.losingCheck(enemy)) return +10000 + depth; // opponent set-3 = they lose
+    
+    // depth 0 - return evaluation
     if (depth == 0) {
-        return position.evaluate();
+        int aaa = position.evaluate(maximizingPlayer);
+        std::cout << "Evaluation = "<<aaa<<" for board:\n";
+        position.printBoard();
+        return aaa;
     }
 
     if (maximizingPlayer) {
         int maxEval = std::numeric_limits<int>::min();
         // For each possible move
-        for (const Position &child : position.generateChildren(true)) {
-            int eval = minimax(child, depth - 1, alpha, beta, false);
+        for (const int &move : position.getLegalMoves(true)) {
+            position.setMove(move, player);
+            int eval = minimax(position, depth - 1, alpha, beta, false);
+            position.undoMove(move, player);
             maxEval = std::max(maxEval, eval);
             alpha   = std::max(alpha, eval);
             if (beta <= alpha) {
@@ -86,8 +137,10 @@ int minimax(const Position &position, int depth, int alpha, int beta, bool maxim
         return maxEval;
     } else {
         int minEval = std::numeric_limits<int>::max();
-        for (const Position &child : position.generateChildren(false)) {
-            int eval = minimax(child, depth - 1, alpha, beta, true);
+        for (const int &move : position.getLegalMoves(false)) {
+            position.setMove(move, player);
+            int eval = minimax(position, depth - 1, alpha, beta, true);
+            position.undoMove(move, player);
             minEval = std::min(minEval, eval);
             beta    = std::min(beta, eval);
             if (beta <= alpha) {
@@ -98,18 +151,21 @@ int minimax(const Position &position, int depth, int alpha, int beta, bool maxim
     }
 }
 
-// Helper to kick off search:
-int findBestMove(const Position &root, int depth, bool maximizingPlayer) {
+int findBestMove(Position &root, int depth, bool maximizingPlayer) {
+    int player = maximizingPlayer ? 1 : 2;
+
     int bestValue = maximizingPlayer ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
     int alpha = std::numeric_limits<int>::min();
     int beta  = std::numeric_limits<int>::max();
-    Position bestChild;
+    int bestMove = 0;
 
-    for (const Position &child : root.generateChildren(maximizingPlayer)) {
-        int val = minimax(child, depth - 1, alpha, beta, !maximizingPlayer);
+    for (const int &move : root.getLegalMoves(maximizingPlayer)) {
+        root.setMove(move, player);
+        int val = minimax(root, depth - 1, alpha, beta, !maximizingPlayer);
+        root.undoMove(move, player);
         if ((maximizingPlayer && val > bestValue) || (!maximizingPlayer && val < bestValue)){
             bestValue = val;
-            bestChild = child;
+            bestMove = move;
         }
         if (maximizingPlayer) alpha = std::max(alpha, bestValue);
         else beta  = std::min(beta,  bestValue);
@@ -117,16 +173,44 @@ int findBestMove(const Position &root, int depth, bool maximizingPlayer) {
         if (beta <= alpha) break;
     }
 
-    // Here you could return bestChild (if your Position stores the move),
-    // or store/return an index, etc. For illustration, we return its eval:
-    for (int i = 0; i < 5; i++)
-        for (int j = 0; j < 5; j++)
-            if(root.boardState[i][j] != bestChild.boardState[i][j]) return (i+1)*10+j+1;
+    return bestMove;
+}
 
+int openingMove(Position &position, int player){
+    std::cout << "OPENING\n";
+    if(position.boardState[1][1] == 0) return 22;
+    if(position.boardState[3][1] == 0) return 42;
+    if(position.boardState[1][3] == 0) return 24;
+    if(position.boardState[3][3] == 0) return 44;
+    
+    for(int i = 1; i < 4; i++)
+        for(int j = 1; j < 4; j++){
+            if(position.boardState[i][j] == 0) {
+                int move = (i+1)*10+j+1;
+                position.setMove(move, player);
+                if(!position.losingCheck(player)) {
+                    position.undoMove(move, player);
+                    return move;
+                }
+                position.undoMove(move, player);
+            }
+        }
     return 0;
 }
 
 int main(int argc, char* argv[]) {
+    int initBoard[5][5] = {
+        { 2, 2, 0, 0, 0 },
+        { 1, 2, 1, 2, 0 },
+        { 0, 0, 1, 0, 0 },
+        { 0, 1, 1, 0, 0 },
+        { 2, 0, 1, 0, 0 }
+    };
+
+    // 2) Pass it into your Position ctor
+    Position test(initBoard);
+    std::cout << "Eval for test: " << test.evaluate(false) << "\n";
+
     if (argc != 6) {
         std::cerr << "Wrong number of arguments\n";
         return EXIT_FAILURE;
@@ -181,14 +265,16 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    setBoard();
+    Position board;
     bool   end_game = false;
     int    player;
     std::sscanf(player_id.c_str(), "%d", &player);
     std::cout << "depth is " << depth << "\n";
 
     bool is_maximizing = player == 2 ? false : true;
-    std::cout << "is_maxizing = " << is_maximizing << " for player " << player << "\n";
+    std::cout << "is_maximizing = " << is_maximizing << " for player " << player << "\n";
+
+    int no_move = 0;
 
     while (!end_game) {
         std::memset(server_message, 0, sizeof(server_message));
@@ -203,14 +289,19 @@ int main(int argc, char* argv[]) {
         int msg  = msg_total / 100;
 
         if (move != 0) {
-            setMove(move, 3 - player);
+            board.setMove(move, 3 - player);
         }
 
         if (msg == 0 || msg == 6) {
             // our turn
-            Position current_pos(board);
-            move = findBestMove(current_pos, depth, is_maximizing); 
-            setMove(move, player);
+            Position current_pos(board.boardState);
+            no_move += 1;
+            std::cout << "Move nr. " << no_move << "\n";
+            if(no_move < depth && no_move < 5) move = openingMove(current_pos, player);
+            else{ 
+                move = findBestMove(current_pos, depth, is_maximizing); 
+            }
+            board.setMove(move, player);
 
             std::string reply = std::to_string(move);
             if (send(sock, reply.c_str(), reply.size(), 0) < 0) {
