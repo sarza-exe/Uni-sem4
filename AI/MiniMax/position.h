@@ -59,7 +59,7 @@ const int lose[48][3][2] = {
 };
 
 // according to centerW in evaluate
-static const std::pair<int,int> spiral[25] = {
+static const std::pair<int,int> movesOrdered[25] = {
     {1,2}, {2,1}, {2,3}, {3,2},                             // weight 6
     {2,2}, {1,1}, {1,3}, {3,1}, {3,3},                      // weight 4
     {0,2}, {2,0}, {2,4}, {4,2},                             // weight 3
@@ -86,7 +86,7 @@ public:
     // Generate all legal moves (spiral from center)
     std::vector<int> getLegalMoves(bool maximizingPlayer) const {
         std::vector<int> children;
-        for (auto [i,j] : spiral) {
+        for (auto [i,j] : movesOrdered) {
             if (boardState[i][j] == 0) {
                 children.emplace_back((i+1)*10 + (j+1));
             }
