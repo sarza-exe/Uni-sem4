@@ -109,7 +109,7 @@ public:
     }
 
     // Heuristic evaluation
-    int evaluate(bool maximizingPlayer) const;
+    int evaluate() const;
 
     // Detect opponent's imminent win: any 4-cell line with exactly 3 of player and 1 empty
     bool imminentWin(int player) const {
@@ -150,10 +150,9 @@ public:
         return false;
     }
 
-    void printBoard() {
-        std::cout << "  1 2 3 4 5\n";
+    void printBoard() const {
         for (int i = 0; i < 5; i++) {
-            std::cout << "%d" << i+1;
+            std::cout << i+1;
             for (int j = 0; j < 5; j++)
             switch (boardState[i][j]) {
                 case 0: printf(" -"); break;

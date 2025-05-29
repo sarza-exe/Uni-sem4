@@ -10,92 +10,60 @@
 #include <vector>
 
 #include "position.h"
+#include "opening.h"
 
-// Heuristic: count partial lines of length 5 without enemy
-        static const int lines[12][5][2] = {
-            // Rows
-            { {0,0},{0,1},{0,2},{0,3},{0,4} },
-            { {1,0},{1,1},{1,2},{1,3},{1,4} },
-            { {2,0},{2,1},{2,2},{2,3},{2,4} },
-            { {3,0},{3,1},{3,2},{3,3},{3,4} },
-            { {4,0},{4,1},{4,2},{4,3},{4,4} },
-            // Columns
-            { {0,0},{1,0},{2,0},{3,0},{4,0} },
-            { {0,1},{1,1},{2,1},{3,1},{4,1} },
-            { {0,2},{1,2},{2,2},{3,2},{4,2} },
-            { {0,3},{1,3},{2,3},{3,3},{4,3} },
-            { {0,4},{1,4},{2,4},{3,4},{4,4} },
-            // Diagonals
-            { {0,0},{1,1},{2,2},{3,3},{4,4} },
-            { {0,4},{1,3},{2,2},{3,1},{4,0} }
-        };
-
-int Position::evaluate(bool maximizingPlayer) const {
-    int me  = maximizingPlayer ? 1 : 2;
-    int you = 3 - me;
-
-    // 1) Terminal shortcuts
-    if (winningCheck(me))  return +10000;
-    if (winningCheck(you)) return -10000;
-    if (losingCheck(me))   return -10000;
-    if (losingCheck(you))  return +10000;
-
+int Position::evaluate() const {
+    int me  = 1;
+    int you = 2;
     int score = 0;
 
-    // 2) Center control bonus
-    //    Encourage occupying central squares
-    constexpr int centerWeights[5][5] = {
-      { 1, 2, 3, 2, 1 },
-      { 2, 4, 6, 4, 2 },
-      { 3, 6, 9, 6, 3 },
-      { 2, 4, 6, 4, 2 },
-      { 1, 2, 3, 2, 1 }
+    // 1) Terminal
+    if (winningCheck(you)) return -10000;
+    if (winningCheck(me)) return 10000;
+    if (losingCheck(me))   return -10000;
+    if (losingCheck(you))  return 10000;
+    
+    // 2) Center bonus
+    constexpr int centerW[5][5] = {
+      {1, 2, 3, 2, 1},
+      {2, 4, 6, 4, 2},
+      {3, 6, 9, 6, 3},
+      {2, 4, 6, 4, 2},
+      {1, 2, 3, 2, 1}
     };
     for (int i = 0; i < 5; ++i)
-      for (int j = 0; j < 5; ++j)
-        if (boardState[i][j] == me)
-          score += centerWeights[i][j];
-        else if (boardState[i][j] == you)
-          score -= centerWeights[i][j];
+      for (int j = 0; j < 5; ++j) {
+        if (boardState[i][j] == me)  score += centerW[i][j];
+        else if (boardState[i][j] == you) score -= centerW[i][j];
+      }
 
-    // 3) Count all 4-length windows (potential wins) in each line
-    //    and all 3-length windows (immediate threats)
-    auto countWindows = [&](int length, int side) {
-      int w = 0;
-      for (auto &line : lines) {
-        // slide window of size `length` along the 5-cell line
-        for (int start = 0; start + length <= 5; ++start) {
-          bool hasEnemy = false;
-          int  cntMe    = 0;
-          for (int k = 0; k < length; ++k) {
-            int v = boardState[line[start + k][0]]
-                                [line[start + k][1]];
-            if (v == (3 - side)) { hasEnemy = true; break; }
-            if (v == side)       ++cntMe;
-          }
-          if (!hasEnemy) {
-            // assign score by how many of your stones in the window
-            if      (cntMe == length)        w += 100;  // already win
-            else if (cntMe == length - 1)    w += 20;   // immediate
-            else if (cntMe == length - 2)    w += 5;    // promising
-            else if (cntMe == 1)             w += 1;
-            else                              w += 0;
-          }
+    // 3) Lines of 4 (from position.h win[28][4][2])
+    for (int w = 0; w < 28; ++w) {
+      int meC = 0, youC = 0;
+      for (int k = 0; k < 4; ++k) {
+        int r = win[w][k][0], c = win[w][k][1];
+        if      (boardState[r][c] == me)  ++meC;
+        else if (boardState[r][c] == you) ++youC;
+      }
+
+      // only one side occupies this window
+      if (youC == 0 && meC > 0) {
+        switch (meC) {
+          case 1: score +=   5; break;   // tiny advance
+          case 2: score +=  20; break;   // decent
+          case 3: score +=  50; break;   // huge “gap” threat
+          case 4: score += 200; break;   // already win (though terminal caught it)
         }
       }
-      return w;
-    };
-
-    // my potential 4-in-a-row vs opponent’s
-    int my4windows  = countWindows(4, me);
-    int your4windows= countWindows(4, you);
-    int my3windows  = countWindows(3, me);
-    int your3windows= countWindows(3, you);
-
-    score +=  50 * my4windows;
-    score -= 100 * your4windows;  // block opponent 4’s aggressively
-    score +=  10 * my3windows;
-    score -=  30 * your3windows;  // penalize their immediate threats
+      else if (meC == 0 && youC > 0) {
+        switch (youC) {
+          case 1: score -=   5; break;
+          case 2: score -=  20; break;
+          case 3: score -= 400; break;   // punish imminent opponent four
+          case 4: score -= 200; break;   // they already win
+        }
+      }
+    }
 
     return score;
 }
@@ -104,27 +72,24 @@ int Position::evaluate(bool maximizingPlayer) const {
 int minimax(Position &position, int depth, int alpha, int beta, bool maximizingPlayer)
 {
     int player = maximizingPlayer ? 1 : 2;
-    int enemy = maximizingPlayer ? 2 : 1;
+    int enemy = 3 - player;
 
-    if (position.imminentWin(player)) return +10000 + depth;  // you have 3 in a 4-cell window with one empty
-    if (position.imminentWin(enemy)) return -10000 + depth;  // you have 3 in a 4-cell window with one empty
-    if (position.winningCheck(player)) return +10000 + depth; // win now is best
-    if (position.winningCheck(enemy)) return -10000 - depth; // you win next
-    if (position.losingCheck(player)) return -10000 - depth; // 3-in-a-row = instant loss
-    if (position.losingCheck(enemy)) return +10000 + depth; // opponent set-3 = they lose
-    
-    // depth 0 - return evaluation
+    // No need to check any further
+    if (position.winningCheck(1)) return +10000 - depth;
+    if (position.winningCheck(2)) return -10000 + depth;
+    if (position.losingCheck(2)) return +10000 - depth;
+    if (position.losingCheck(1)) return -10000 + depth;
+
+    // return evaluation
     if (depth == 0) {
-        int aaa = position.evaluate(maximizingPlayer);
-        std::cout << "Evaluation = "<<aaa<<" for board:\n";
-        position.printBoard();
-        return aaa;
+        return position.evaluate();
     }
 
     if (maximizingPlayer) {
         int maxEval = std::numeric_limits<int>::min();
         // For each possible move
-        for (const int &move : position.getLegalMoves(true)) {
+        auto moves = position.getLegalMoves(true);
+        for (const int &move : moves) {
             position.setMove(move, player);
             int eval = minimax(position, depth - 1, alpha, beta, false);
             position.undoMove(move, player);
@@ -162,6 +127,8 @@ int findBestMove(Position &root, int depth, bool maximizingPlayer) {
     for (const int &move : root.getLegalMoves(maximizingPlayer)) {
         root.setMove(move, player);
         int val = minimax(root, depth - 1, alpha, beta, !maximizingPlayer);
+        std::cout << "Evaluation = "<<val<<" for board:\n";
+        root.printBoard();
         root.undoMove(move, player);
         if ((maximizingPlayer && val > bestValue) || (!maximizingPlayer && val < bestValue)){
             bestValue = val;
@@ -176,28 +143,6 @@ int findBestMove(Position &root, int depth, bool maximizingPlayer) {
     return bestMove;
 }
 
-int openingMove(Position &position, int player){
-    std::cout << "OPENING\n";
-    if(position.boardState[1][1] == 0) return 22;
-    if(position.boardState[3][1] == 0) return 42;
-    if(position.boardState[1][3] == 0) return 24;
-    if(position.boardState[3][3] == 0) return 44;
-    
-    for(int i = 1; i < 4; i++)
-        for(int j = 1; j < 4; j++){
-            if(position.boardState[i][j] == 0) {
-                int move = (i+1)*10+j+1;
-                position.setMove(move, player);
-                if(!position.losingCheck(player)) {
-                    position.undoMove(move, player);
-                    return move;
-                }
-                position.undoMove(move, player);
-            }
-        }
-    return 0;
-}
-
 int main(int argc, char* argv[]) {
     int initBoard[5][5] = {
         { 2, 2, 0, 0, 0 },
@@ -209,7 +154,7 @@ int main(int argc, char* argv[]) {
 
     // 2) Pass it into your Position ctor
     Position test(initBoard);
-    std::cout << "Eval for test: " << test.evaluate(false) << "\n";
+    std::cout << "Eval for test: " << test.evaluate() << "\n";
 
     if (argc != 6) {
         std::cerr << "Wrong number of arguments\n";
@@ -297,7 +242,7 @@ int main(int argc, char* argv[]) {
             Position current_pos(board.boardState);
             no_move += 1;
             std::cout << "Move nr. " << no_move << "\n";
-            if(no_move < depth && no_move < 5) move = openingMove(current_pos, player);
+            if(no_move < depth && no_move < 3) move = openingMove(current_pos, player);
             else{ 
                 move = findBestMove(current_pos, depth, is_maximizing); 
             }
