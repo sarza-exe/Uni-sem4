@@ -5,13 +5,39 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <gsl/gsl_rng.h>
 #include <time.h>
 #include <vector>
 
 #include "position.h"
 #include "opening.h"
 
+/**
+ * @brief Heuristic evaluation for a 5×5 Tic-Tac-Toe.
+ * 
+ * This function computes a numeric score for the current position from the perspective of the
+ * “me” player (1). Positive scores favor “me”, negative scores favor the opponent “you” (2).
+ * 
+ * Scoring steps:
+ * 1. Terminal checks:
+ *    - If the opponent has a winning 4-in-a-row: return –10000 (loss).
+ *    - If “me” has a winning 4-in-a-row: return +10000 (win).
+ *    - If “me” has an unintended 3-in-a-row (losing condition): return –10000.
+ *    - If the opponent has a 3-in-a-row (they lose): return +10000.
+ * 
+ * 2. Center‐control bonus:
+ *    - Adds weights based on a predefined 5×5 matrix, rewarding central positions more.
+ *    - Each “me” mark adds its cell weight; each “you” mark subtracts it.
+ * 
+ * 3. Four‐cell window analysis:
+ *    - For each of the 28 possible 4-cell lines, count marks:
+ *      • If only “me” occupies the window, add:
+ *          – +5 for 1 mark, +20 for 2, +50 for 3 (gap threat), +200 for 4 (already won).
+ *      • If only “you” occupies it, subtract:
+ *          – –5 for 1 mark, –20 for 2, –400 for 3 (imminent threat), –200 for 4 (they won).
+ * 
+ * @return Integer score, with large magnitude for wins/losses and moderate values
+ *         guiding the search in non-terminal positions.
+ */
 int Position::evaluate() const {
     int me  = 1;
     int you = 2;
@@ -27,10 +53,11 @@ int Position::evaluate() const {
     constexpr int centerW[5][5] = {
       {1, 2, 3, 2, 1},
       {2, 4, 6, 4, 2},
-      {3, 6, 9, 6, 3},
+      {3, 6, 4, 6, 3},
       {2, 4, 6, 4, 2},
       {1, 2, 3, 2, 1}
     };
+    
     for (int i = 0; i < 5; ++i)
       for (int j = 0; j < 5; ++j) {
         if (boardState[i][j] == me)  score += centerW[i][j];
@@ -41,7 +68,7 @@ int Position::evaluate() const {
     for (int w = 0; w < 28; ++w) {
       int meC = 0, youC = 0;
       for (int k = 0; k < 4; ++k) {
-        int r = win[w][k][0], c = win[w][k][1];
+        int r = fourInARow[w][k][0], c = fourInARow[w][k][1];
         if      (boardState[r][c] == me)  ++meC;
         else if (boardState[r][c] == you) ++youC;
       }
@@ -49,22 +76,21 @@ int Position::evaluate() const {
       // only one side occupies this window
       if (youC == 0 && meC > 0) {
         switch (meC) {
-          case 1: score +=   5; break;   // tiny advance
-          case 2: score +=  20; break;   // decent
-          case 3: score +=  50; break;   // huge “gap” threat
+          case 1: score += 5; break;   // tiny advance
+          case 2: score += 20; break;   // decent
+          case 3: score += 50; break;   // huge “gap” threat
           case 4: score += 200; break;   // already win (though terminal caught it)
         }
       }
       else if (meC == 0 && youC > 0) {
         switch (youC) {
-          case 1: score -=   5; break;
-          case 2: score -=  20; break;
+          case 1: score -= 5; break;
+          case 2: score -= 20; break;
           case 3: score -= 400; break;   // punish imminent opponent four
           case 4: score -= 200; break;   // they already win
         }
       }
     }
-
     return score;
 }
 
@@ -75,10 +101,10 @@ int minimax(Position &position, int depth, int alpha, int beta, bool maximizingP
     int enemy = 3 - player;
 
     // No need to check any further
-    if (position.winningCheck(1)) return +10000 - depth;
-    if (position.winningCheck(2)) return -10000 + depth;
-    if (position.losingCheck(2)) return +10000 - depth;
-    if (position.losingCheck(1)) return -10000 + depth;
+    if (position.winningCheck(1)) return +10000 + depth;
+    if (position.winningCheck(2)) return -10000 - depth;
+    if (position.losingCheck(2)) return +10000 + depth;
+    if (position.losingCheck(1)) return -10000 - depth;
 
     // return evaluation
     if (depth == 0) {
@@ -139,23 +165,21 @@ int findBestMove(Position &root, int depth, bool maximizingPlayer) {
 
         if (beta <= alpha) break;
     }
-
     return bestMove;
 }
 
+// Connecting to server and managing connection by Prof. Maciej Gębala (CC BY-NC 4.0)
+// Modified for educational use
 int main(int argc, char* argv[]) {
     int initBoard[5][5] = {
-        { 2, 2, 0, 0, 0 },
-        { 1, 2, 1, 2, 0 },
-        { 0, 0, 1, 0, 0 },
-        { 0, 1, 1, 0, 0 },
-        { 2, 0, 1, 0, 0 }
+        { 1, 2, 1, 1, 0 },
+        { 0, 1, 2, 0, 0 },
+        { 0, 0, 2, 0, 0 },
+        { 0, 2, 0, 1, 0 },
+        { 0, 0, 0, 2, 0 }
     };
-
-    // 2) Pass it into your Position ctor
     Position test(initBoard);
     std::cout << "Eval for test: " << test.evaluate() << "\n";
-
     if (argc != 6) {
         std::cerr << "Wrong number of arguments\n";
         return EXIT_FAILURE;
@@ -166,10 +190,6 @@ int main(int argc, char* argv[]) {
     const std::string player_id   = argv[3];
     const std::string player_pass = argv[4];
     const int         depth       = std::stoi(argv[5]);
-
-    // Initialize GSL RNG
-    gsl_rng* generator = gsl_rng_alloc(gsl_rng_mt19937);
-    gsl_rng_set(generator, static_cast<unsigned long>(time(nullptr)));
 
     // Create socket
     int sock = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -241,8 +261,8 @@ int main(int argc, char* argv[]) {
             // our turn
             Position current_pos(board.boardState);
             no_move += 1;
-            std::cout << "Move nr. " << no_move << "\n";
-            if(no_move < depth && no_move < 3) move = openingMove(current_pos, player);
+            std::cout << "Move nr. " << no_move << "!\n";
+            if(no_move < depth && no_move <= no_opening_moves) move = openingMove(current_pos, player);
             else{ 
                 move = findBestMove(current_pos, depth, is_maximizing); 
             }
@@ -267,6 +287,5 @@ int main(int argc, char* argv[]) {
     }
 
     close(sock);
-    gsl_rng_free(generator);
     return EXIT_SUCCESS;
 }

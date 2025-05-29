@@ -1,6 +1,6 @@
 #pragma once
 
-// Original win/lose pattern code by Prof. Maciej Gębala (CC BY-NC 4.0)
+// Original win/lose pattern code and printBoard by Prof. Maciej Gębala (CC BY-NC 4.0)
 // Modified for educational use
 
 // Position class for 5x5 Tic-Tac-Toe variant
@@ -8,7 +8,7 @@
 #include <vector>
 #include <iostream>
 
-const int win[28][4][2] = {
+const int fourInARow[28][4][2] = {
   { {0, 0}, {0, 1}, {0, 2}, {0, 3} },
   { {1, 0}, {1, 1}, {1, 2}, {1, 3} },
   { {2, 0}, {2, 1}, {2, 2}, {2, 3} },
@@ -58,6 +58,15 @@ const int lose[48][3][2] = {
   { {1, 4}, {2, 3}, {3, 2} }, { {2, 3}, {3, 2}, {4, 1} }, { {2, 4}, {3, 3}, {4, 2} }
 };
 
+// according to centerW in evaluate
+static const std::pair<int,int> spiral[25] = {
+    {1,2}, {2,1}, {2,3}, {3,2},                             // weight 6
+    {2,2}, {1,1}, {1,3}, {3,1}, {3,3},                      // weight 4
+    {0,2}, {2,0}, {2,4}, {4,2},                             // weight 3
+    {0,1}, {0,3}, {1,0}, {1,4}, {3,0}, {3,4}, {4,1}, {4,3}, // weight 2
+    {0,0}, {0,4}, {4,0}, {4,4}                              // weight 1 (corners)
+    };
+
 class Position {
 public:
     int boardState[5][5];
@@ -74,15 +83,12 @@ public:
                 boardState[i][j] = board[i][j];
     }
 
-    // Generate all legal moves (encoded as two-digit row/col)
+    // Generate all legal moves (spiral from center)
     std::vector<int> getLegalMoves(bool maximizingPlayer) const {
         std::vector<int> children;
-        for (int i = 0; i < 5; ++i) {
-            for (int j = 0; j < 5; ++j) {
-                if (boardState[i][j] == 0) {
-                    int move = (i + 1) * 10 + (j + 1);
-                    children.emplace_back(move);
-                }
+        for (auto [i,j] : spiral) {
+            if (boardState[i][j] == 0) {
+                children.emplace_back((i+1)*10 + (j+1));
             }
         }
         return children;
@@ -116,8 +122,8 @@ public:
         for (int i = 0; i < 28; ++i) {
             int cnt = 0, empt = 0;
             for (int k = 0; k < 4; ++k) {
-                int r = win[i][k][0];
-                int c = win[i][k][1];
+                int r = fourInARow[i][k][0];
+                int c = fourInARow[i][k][1];
                 int v = boardState[r][c];
                 if (v == player) cnt++;
                 else if (v == 0) empt++;
@@ -129,10 +135,10 @@ public:
 
     bool winningCheck(int player) const {
         for (int k = 0; k < 28; ++k) {
-            if (boardState[win[k][0][0]][win[k][0][1]] == player &&
-                boardState[win[k][1][0]][win[k][1][1]] == player &&
-                boardState[win[k][2][0]][win[k][2][1]] == player &&
-                boardState[win[k][3][0]][win[k][3][1]] == player) {
+            if (boardState[fourInARow[k][0][0]][fourInARow[k][0][1]] == player &&
+                boardState[fourInARow[k][1][0]][fourInARow[k][1][1]] == player &&
+                boardState[fourInARow[k][2][0]][fourInARow[k][2][1]] == player &&
+                boardState[fourInARow[k][3][0]][fourInARow[k][3][1]] == player) {
                 return true;
             }
         }
