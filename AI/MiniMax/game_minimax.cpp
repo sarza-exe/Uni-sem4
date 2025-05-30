@@ -78,16 +78,14 @@ int Position::evaluate() const {
         switch (meC) {
           case 1: score += 5; break;   // tiny advance
           case 2: score += 20; break;   // decent
-          case 3: score += 50; break;   // huge “gap” threat
-          case 4: score += 200; break;   // already win (though terminal caught it)
+          case 3: score += 150; break;   // huge “gap” threat
         }
       }
       else if (meC == 0 && youC > 0) {
         switch (youC) {
           case 1: score -= 5; break;
           case 2: score -= 20; break;
-          case 3: score -= 400; break;   // punish imminent opponent four
-          case 4: score -= 200; break;   // they already win
+          case 3: score -= 150; break;   // OO O
         }
       }
     }
