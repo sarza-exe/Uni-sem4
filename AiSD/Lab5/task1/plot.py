@@ -2,24 +2,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 
-if len(sys.argv) >= 2:
-        dir = sys.argv[1]
-else:
-    print("Pass directory name!")
-    exit(-1)
+df = pd.read_csv(f'stats.csv')
 
-df = pd.read_csv(f'{dir}/stats.csv')
+# expecting 'n', 'avg_time_kruskal', 'avg_time_prim'
+if not {'n', 'avg_rounds', 'min_rounds', 'max_rounds'}.issubset(df.columns):
+    raise ValueError("Wrong columns.")
 
-# Oczekiwane kolumny: 'n', 'avg_time_kruskal', 'avg_time_prim'
-if not {'n', 'avg_time_kruskal', 'avg_time_prim'}.issubset(df.columns):
-    raise ValueError("Plik CSV musi zawierać kolumny 'n', 'avg_time_kruskal', 'avg_time_prim'.")
-
-# Wyciągnięcie wartości
+# extract
 n = df['n']
 avg_time_kruskal = df['avg_time_kruskal']
 avg_time_prim = df['avg_time_prim']
 
-# Utworzenie wykresu
+# plot
 plt.figure(figsize=(10, 6))
 plt.plot(n, avg_time_kruskal, marker='o', label="Kruskal's Algorithm")
 plt.plot(n, avg_time_prim, marker='s', label="Prim's Algorithm")
@@ -29,7 +23,5 @@ plt.title('Average Running Time of Kruskal vs Prim')
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f'{dir}/plot')
-
-# Wyświetlenie wykresu
+plt.savefig(f'plot')
 plt.show()
