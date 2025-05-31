@@ -1,17 +1,18 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-// ------------------------
-// Struktura do Union-Find
+// Disjoint Set Union
+// track a set of elements partitioned into disjoint (non-overlapping) subsets
 struct DSU {
-    vector<int> parent, rankv;
+    vector<int> parent; //The root of a set is the element whose parent is itself 
+    vector<int> rankv; // rankv - estimate of the height of the tree whose root is x
     DSU(int n): parent(n), rankv(n,0) {
-        iota(parent.begin(), parent.end(), 0);
+        iota(parent.begin(), parent.end(), 0); // it's node is its own parent and therefor tree
     }
     int find(int x) {
-        return parent[x] == x ? x : parent[x] = find(parent[x]);
+        return parent[x] == x ? x : parent[x] = find(parent[x]); // it changes depth into breadth
     }
-    bool unite(int a, int b) {
+    bool unite(int a, int b) { // unite attaches smaller tree to bigger
         a = find(a); b = find(b);
         if (a == b) return false;
         if (rankv[a] < rankv[b]) swap(a,b);
@@ -44,16 +45,17 @@ vector<Edge> generate_complete_graph(int n) {
 // Kruskal algorithm
 pair<double, vector<Edge>> kruskal(int n, vector<Edge> edges) {
     sort(edges.begin(), edges.end(),
-         [](auto &a, auto &b){ return get<0>(a) < get<0>(b); });
+         [](auto &a, auto &b){ return get<0>(a) < get<0>(b); }); // O(E log E) sort edges by increasing weight
     DSU dsu(n);
     double total_weight = 0;
     vector<Edge> mst;
     mst.reserve(n-1);
     for (auto &e : edges) {
-        double w; int u, v;
+        double w; 
+        int u, v;
         tie(w,u,v) = e;
-        if (dsu.unite(u, v)) {
-            mst.push_back(e);
+        if (dsu.unite(u, v)) { //  O(1) if we united u and v trees
+            mst.push_back(e); // Add the smallest edge that doesn’t create a cycle.
             total_weight += w;
             if ((int)mst.size() == n-1) break;
         }
@@ -116,8 +118,8 @@ void print_mst(const vector<Edge> &mst) {
 }
 
 int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
+    ios::sync_with_stdio(false); // doesn't sync cout/cin with stdio equivalents. Faster
+    cin.tie(nullptr); // cin doesn't flush cout
 
     const int n = 5;
 
