@@ -58,12 +58,12 @@ const int lose[48][3][2] = {
   { {1, 4}, {2, 3}, {3, 2} }, { {2, 3}, {3, 2}, {4, 1} }, { {2, 4}, {3, 3}, {4, 2} }
 };
 
-// according to centerW in evaluate
+// according to centerControl in evaluate
 static const std::pair<int,int> movesOrdered[25] = {
     {1,2}, {2,1}, {2,3}, {3,2},                             // weight 6
     {2,2}, {1,1}, {1,3}, {3,1}, {3,3},                      // weight 4
-    {0,2}, {2,0}, {2,4}, {4,2},                             // weight 3
-    {0,1}, {0,3}, {1,0}, {1,4}, {3,0}, {3,4}, {4,1}, {4,3}, // weight 2
+    {0,1}, {0,3}, {1,0}, {1,4}, {3,0}, {3,4}, {4,1}, {4,3}, // weight 3
+    {0,2}, {2,0}, {2,4}, {4,2},                             // weight 2
     {0,0}, {0,4}, {4,0}, {4,4}                              // weight 1 (corners)
     };
 

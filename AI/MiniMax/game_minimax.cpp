@@ -38,30 +38,31 @@
  * @return Integer score, with large magnitude for wins/losses and moderate values
  *         guiding the search in non-terminal positions.
  */
+
+// Center bonus
+const int centerControl[5][5] = {
+    {1, 3, 2, 3, 1},
+    {3, 4, 6, 4, 3},
+    {2, 6, 4, 6, 2},
+    {3, 4, 6, 4, 3},
+    {1, 3, 2, 3, 1}
+};
+
 int Position::evaluate() const {
     int me  = 1;
     int you = 2;
     int score = 0;
 
-    // 1) Terminal
+    // terminal conditions 
     if (winningCheck(you)) return -10000;
     if (winningCheck(me)) return 10000;
-    if (losingCheck(me))   return -10000;
-    if (losingCheck(you))  return 10000;
-    
-    // 2) Center bonus
-    constexpr int centerW[5][5] = {
-      {1, 2, 3, 2, 1},
-      {2, 4, 6, 4, 2},
-      {3, 6, 4, 6, 3},
-      {2, 4, 6, 4, 2},
-      {1, 2, 3, 2, 1}
-    };
+    if (losingCheck(me)) return -10000;
+    if (losingCheck(you)) return 10000;
     
     for (int i = 0; i < 5; ++i)
       for (int j = 0; j < 5; ++j) {
-        if (boardState[i][j] == me)  score += centerW[i][j];
-        else if (boardState[i][j] == you) score -= centerW[i][j];
+        if (boardState[i][j] == me)  score += centerControl[i][j];
+        else if (boardState[i][j] == you) score -= centerControl[i][j];
       }
 
     // 3) Lines of 4 (from position.h win[28][4][2])
@@ -69,7 +70,7 @@ int Position::evaluate() const {
       int meC = 0, youC = 0;
       for (int k = 0; k < 4; ++k) {
         int r = fourInARow[w][k][0], c = fourInARow[w][k][1];
-        if      (boardState[r][c] == me)  ++meC;
+        if (boardState[r][c] == me)  ++meC;
         else if (boardState[r][c] == you) ++youC;
       }
 
