@@ -13,10 +13,11 @@ plt.plot(df['n'], df['max_rounds'], marker='s', label='Max Rounds')
 # Labels, title, legend
 plt.xlabel('Number of Nodes (n)')
 plt.ylabel('Number of Rounds')
-plt.title('Broadcast Rounds vs Number of Nodes')
+plt.title('Broadcast Rounds in Relation to the Number of Nodes')
 plt.legend()
 plt.grid(True)
 
 # Show the plot
 plt.tight_layout()
+plt.savefig(f'plot')
 plt.show()

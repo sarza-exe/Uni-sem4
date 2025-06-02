@@ -69,9 +69,8 @@ pair<double, vector<Edge>> prim(int n, const vector<Edge> &edges) {
 }
 
 
-// We will implement helper functions that, given a tree adjacency list and a chosen root,
+// Helper functions that, given a tree adjacency list and a chosen root,
 // compute the minimum number of rounds needed to broadcast from that root to all nodes.
-// The main experiment will call this for random roots and random MSTs.
 // Build the rooted tree: fill parent[] and children[] vectors.
 void buildTree(const vector<vector<int>> &adj, int u, int p, vector<int> &parent, vector<vector<int>> &children) {
     parent[u] = p;
