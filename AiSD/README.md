@@ -22,3 +22,9 @@ Implementacja struktur danych:
 - Binary Search Tree
 - Red-Black Binary Search Tree
 - Splay Tree
+
+## Lista 5:
+Implementacja:
+- Algorytmów Prima i Kruskala do wyznaczania minimalnego drzewa rozpinającego (MST),
+- Broadcast Schedule: algorytm do tworzenia harmonogramu transmisji, która rozpoczyna się w wierzchołku v, tak aby liczba rund potrzebna do dotarcia informacji do wszystkich wierzchołków grafu była jak najmniejsza. Zakładamy, że w każdej turze wierzchołki, które posiadają informację, mogą ją rozesłać dalej do jednego swojego dziecka,
+- Binomial Heap: kopiec dwumianowy
