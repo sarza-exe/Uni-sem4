@@ -5,6 +5,11 @@ const Appointment = require('../models/appointment');
 // GET /patients?page=&limit=
 exports.getAll = async (req, res, next) => {
     try{
+	const { id: requesterId, role: requesterRole } = req.user;
+        // only admin or doctor
+        if (requesterRole !== 'admin' && requesterRole !== 'doctor') {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 20;
         const skip = (page - 1) * limit;

@@ -16,6 +16,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  // Add radio button state for user type
+  String _selectedType = 'patient';
+
   Future<void> _submitLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -24,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await _apiService.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
-        'patient', // or 'doctor', depending on your flow
+        _selectedType,
       );
 
       // If login succeeded, navigate to home
@@ -59,6 +62,36 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 48),
+
+                // Radio buttons for selecting user type
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Radio<String>(
+                      value: 'patient',
+                      groupValue: _selectedType,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedType = value!;
+                        });
+                      },
+                    ),
+                    const Text('Patient'),
+                    const SizedBox(width: 16),
+                    Radio<String>(
+                      value: 'doctor',
+                      groupValue: _selectedType,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedType = value!;
+                        });
+                      },
+                    ),
+                    const Text('Doctor'),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -97,9 +130,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submitLogin,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
                   child: _isLoading
                       ? const SizedBox(
                           height: 16,
@@ -107,6 +137,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Log In'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextButton(

@@ -2,9 +2,25 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../widgets/drawer.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _storage = const FlutterSecureStorage();
+  String _role = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRoleFromStorage();
+  }
 
   Future<void> _logout(BuildContext context) async {
     await ApiService().logout(); // Implement logout to delete JWT from storage
@@ -15,47 +31,21 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _loadRoleFromStorage() async {
+    // Attempt to read the value stored under the key "role"
+    final storedRole = await _storage.read(key: 'role');
+    setState(() {
+      _role = storedRole ?? 'unknown';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Clinic Dashboard'),
+        title: Text('Hello, $_role'),
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text(
-                'Clinic Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.medical_services),
-              title: const Text('Doctors'),
-              onTap: () => Navigator.pushNamed(context, '/doctors'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Patients'),
-              onTap: () => Navigator.pushNamed(context, '/patients'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.event_note),
-              title: const Text('Appointments'),
-              onTap: () => Navigator.pushNamed(context, '/appointments'),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () => _logout(context),
-            ),
-          ],
-        ),
-      ),
+      drawer: MainDrawer(currentRoute: '/home', role: _role),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -66,23 +56,43 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              icon: const Icon(Icons.medical_services),
-              label: const Text('View Doctors'),
-              onPressed: () => Navigator.pushNamed(context, '/doctors'),
-              style: ElevatedButton.styleFrom(minimumSize: const Size(200, 48)),
+                icon: const Icon(Icons.person),
+                label: const Text('My Profile'),
+                onPressed: () => Navigator.pushNamed(context, '/profile'),
+                style: ElevatedButton.styleFrom(minimumSize: const Size(200, 48)),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.people),
-              label: const Text('View Patients'),
-              onPressed: () => Navigator.pushNamed(context, '/patients'),
-              style: ElevatedButton.styleFrom(minimumSize: const Size(200, 48)),
-            ),
+            if(_role != 'patient')
+              const SizedBox(height: 24),
+            if(_role != 'patient')
+              ElevatedButton.icon(
+                icon: const Icon(Icons.medical_services),
+                label: const Text('View Doctors'),
+                onPressed: () => Navigator.pushNamed(context, '/doctors'),
+                style: ElevatedButton.styleFrom(minimumSize: const Size(200, 48)),
+              ),
+            if(_role != 'patient')
+              const SizedBox(height: 16),
+            if(_role != 'patient')
+              ElevatedButton.icon(
+                icon: const Icon(Icons.people),
+                label: const Text('View Patients'),
+                onPressed: () => Navigator.pushNamed(context, '/patients'),
+                style: ElevatedButton.styleFrom(minimumSize: const Size(200, 48)),
+              ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               icon: const Icon(Icons.event_note),
               label: const Text('View Appointments'),
               onPressed: () => Navigator.pushNamed(context, '/appointments'),
+              style: ElevatedButton.styleFrom(minimumSize: const Size(200, 48)),
+            ),
+            if(_role == 'patient')
+            const SizedBox(height: 16),
+            if(_role == 'patient')
+            ElevatedButton.icon(
+              icon: const Icon(Icons.event_note),
+              label: const Text('Create Appointment'),
+              onPressed: () => Navigator.pushNamed(context, '/create_appointment'),
               style: ElevatedButton.styleFrom(minimumSize: const Size(200, 48)),
             ),
           ],

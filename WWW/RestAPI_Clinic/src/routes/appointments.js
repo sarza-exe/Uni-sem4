@@ -2,8 +2,10 @@ const express = require('express');
 const router  = express.Router();
 const appointmentCtrl = require('../controllers/appointments');
 
+
+
 // GET /appointments
-router.get('/', appointmentCtrl.getAll);
+router.get('/', appointmentCtrl.getAppointments); // getAll
 
 // GET /appointments/:id
 router.get('/:id', appointmentCtrl.getById);

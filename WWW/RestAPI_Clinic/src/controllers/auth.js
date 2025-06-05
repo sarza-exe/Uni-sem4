@@ -53,18 +53,23 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password, type } = req.body;
     const Model = type === 'doctor' ? Doctor : Patient;
-    const user = await Model.findOne({ email });
+    const user  = await Model.findOne({ email });
     if (!user) return res.status(400).json({ error: 'Invalid credentials' });
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
+    // For doctors, use user.role; for patients, force 'patient'
+    const role = type === 'doctor' ? user.role : 'patient';
+
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
-    res.json({ token });
+
+    // Return both token and role so the client can store it directly if desired
+    res.json({ token, role });
   } catch (err) {
     next(err);
   }
