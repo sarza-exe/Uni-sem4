@@ -43,8 +43,22 @@ class _PatientsScreenState extends State<PatientsScreen> {
         _patients = patients;
       });
     } catch (e) {
+      final msg = e.toString();
+      String send;
+      print(msg);
+      if (msg.contains('403')) {
+        send = 'You do not have permission.';
+      } else if (msg.contains('404')) {
+        send = 'Error 404.';
+      } else if (msg.contains('409')) {
+        send = 'Email already in use.';
+      } else if (msg.contains('500')) {
+        send = 'Server error occurred. Please try again later.';
+      } else {
+        send = 'Network error';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load patients: \$e')),
+        SnackBar(content: Text(send)),
       );
     } finally {
       setState(() {
@@ -84,8 +98,20 @@ class _PatientsScreenState extends State<PatientsScreen> {
       );
       _fetchPatients(); // Refresh list after deletion
     } catch (e) {
+      final msg = e.toString();
+      String send;
+      print(msg);
+      if (msg.contains('403')) {
+        send = 'You do not have permission.';
+      } else if (msg.contains('404')) {
+        send = 'Error 404.';
+      } else if (msg.contains('500')) {
+        send = 'Server error occurred. Please try again later.';
+      } else {
+        send = 'Network error';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete patient: \$e')),
+        SnackBar(content: Text(send)),
       );
     } finally {
       setState(() {

@@ -55,7 +55,7 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
       } else if (msg.contains('500')) {
         send = 'Server error occurred. Please try again later.';
       } else {
-        send = 'Unexpected error';
+        send = 'Network error';
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(send)),

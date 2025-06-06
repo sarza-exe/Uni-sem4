@@ -33,6 +33,29 @@ class ApiService {
   
   // AUTH
 
+  Future<Map<String, dynamic>> loginWithGoogle( String idToken, String type) async {
+    final uri = Uri.parse('$_baseUrl/api/auth/google');
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'idToken': idToken, 'type': type}),
+    );
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      final token = body['token'];
+      final role  = body['role'];
+      Map<String, dynamic> decoded = JwtDecoder.decode(token);
+      final id = decoded['id'] as String;
+      await _storage.write(key: 'jwt', value: token);
+      await _storage.write(key: 'role', value: role);
+      await _storage.write(key: 'id', value: id);
+      return decoded;
+    }
+    else {
+      throw Exception('${response.statusCode} Google login failed: ${response.body}');
+    }
+  }
+
   Future<void> login(String email, String password, String type ) async {
     final uri = Uri.parse('$_baseUrl/api/auth/login');
     final response = await http.post(
@@ -50,7 +73,7 @@ class ApiService {
       await _storage.write(key: 'role', value: role);
       await _storage.write(key: 'id', value: id);
     } else {
-      throw Exception('Login failed: ${response.body}');
+      throw Exception('${response.statusCode} Login failed: ${response.body}');
     }
   }
 
@@ -62,7 +85,7 @@ class ApiService {
       body: jsonEncode(body),
     );
     if (response.statusCode != 201) {
-      throw Exception('Registration failed: ${response.body}');
+      throw Exception('Registration failed: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -107,7 +130,7 @@ class ApiService {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
       throw Exception(
-        '\${response.statusCode} Failed to load doctor: \${response.body}'
+        '${response.statusCode} Failed to load doctor: ${response.body}'
       );
     }
   }
@@ -119,7 +142,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as List<dynamic>;
     } else {
-      throw Exception('Failed to fetch doctors by specialty: ${response.body}');
+      throw Exception('Failed to fetch doctors by specialty: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -132,7 +155,7 @@ class ApiService {
       body: jsonEncode(body),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to update doctor: ${response.body}');
+      throw Exception('Failed to update doctor: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -145,7 +168,7 @@ class ApiService {
       body: jsonEncode({'password': newPassword}),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to change doctor password: ${response.body}');
+      throw Exception('Failed to change doctor password: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -154,7 +177,7 @@ class ApiService {
     final uri = Uri.parse('$_baseUrl/api/doctors/$id');
     final response = await http.delete(uri, headers: _authHeaders(token));
     if (response.statusCode != 204) {
-      throw Exception('Failed to delete doctor: ${response.body}');
+      throw Exception('Failed to delete doctor: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -183,7 +206,7 @@ class ApiService {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
       throw Exception(
-        '\${response.statusCode} Failed to load patient: \${response.body}'
+        '${response.statusCode} Failed to load patient: ${response.body}'
       );
     }
   }
@@ -206,7 +229,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as List<dynamic>;
     } else {
-      throw Exception('Failed to load patient appointments: ${response.body}');
+      throw Exception('Failed to load patient appointments: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -219,7 +242,7 @@ class ApiService {
       body: jsonEncode(body),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to update patient: ${response.body}');
+      throw Exception('Failed to update patient: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -232,7 +255,7 @@ class ApiService {
       body: jsonEncode({'password': newPassword}),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to change patient password: ${response.body}');
+      throw Exception('Failed to change patient password: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -241,7 +264,7 @@ class ApiService {
     final uri = Uri.parse('$_baseUrl/api/patients/$id');
     final response = await http.delete(uri, headers: _authHeaders(token));
     if (response.statusCode != 204) {
-      throw Exception('Failed to delete patient: ${response.body}');
+      throw Exception('Failed to delete patient: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -285,7 +308,7 @@ class ApiService {
       body: jsonEncode(body),
     );
     if (response.statusCode != 201) {
-      throw Exception('Failed to create appointment: ${response.body}');
+      throw Exception('Failed to create appointment: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -298,7 +321,7 @@ class ApiService {
       body: jsonEncode(body),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to update appointment: ${response.body}');
+      throw Exception('Failed to update appointment: ${response.body} ${response.statusCode}');
     }
   }
 
@@ -307,7 +330,7 @@ class ApiService {
     final uri = Uri.parse('$_baseUrl/api/appointments/$id');
     final response = await http.delete(uri, headers: _authHeaders(token));
     if (response.statusCode != 204) {
-      throw Exception('Failed to delete appointment: ${response.body}');
+      throw Exception('Failed to delete appointment: ${response.body} ${response.statusCode}');
     }
   }
 }

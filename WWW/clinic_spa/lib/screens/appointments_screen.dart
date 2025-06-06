@@ -73,7 +73,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         } else if (msg.contains('500')) {
           _loadError = 'Server error occurred. Please try again later.';
         } else {
-          _loadError = 'Unexpected error';
+          _loadError = 'Network error';
         }
         // Return an empty list so FutureBuilder completes
         return <dynamic>[];

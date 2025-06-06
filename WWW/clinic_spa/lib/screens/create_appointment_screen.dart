@@ -67,7 +67,7 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load doctors: $e')),
+        SnackBar(content: Text('Failed to load doctors: 503')),
       );
     } finally {
       setState(() {

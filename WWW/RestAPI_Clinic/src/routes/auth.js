@@ -11,5 +11,6 @@ router.post('/register/patient', authCtrl.registerPatient);
 router.post('/register/doctor', authJWT, role('admin'), authCtrl.registerDoctor);
 // Public: login (provide field 'type': 'doctor' or 'patient')
 router.post('/login', authCtrl.login);
+router.post('/google', authCtrl.google);
 
 module.exports = router;

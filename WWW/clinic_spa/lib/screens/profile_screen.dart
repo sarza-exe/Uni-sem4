@@ -44,38 +44,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   /// Reads "role" and "id" from secure storage, then fetches profile.
   Future<void> _loadProfile() async {
-    // 1) Read from secure storage:
-    final storedRole = await _storage.read(key: 'role');
-    final storedId   = await _storage.read(key: 'id');
-    _role   = storedRole ?? 'patient';
-    _userId = storedId   ?? '';
 
-    // 2) Fetch from API:
+  // 1) Read from secure storage
+  final storedRole = await _storage.read(key: 'role');
+  final storedId   = await _storage.read(key: 'id');
+  _role   = storedRole ?? 'patient';
+  _userId = storedId   ?? '';
+
     if (_role == 'patient') {
-      final Map<String, dynamic> profile =
-          await _apiService.fetchPatientById(_userId);
+      // Wrap the fetch in try/catch so network errors show a Snackbar
+      Map<String, dynamic> profile;
+      try {
+        profile = await _apiService.fetchPatientById(_userId);
+      } catch (err) {
+        // If the call itself fails (e.g. server is off), show a SnackBar and return early
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to fetch profile (network error)')),
+        );
+        return;
+      }
 
-      // Populate controllers:
-      _nameController.text      = profile['name']      as String? ?? '';
-      _emailController.text     = profile['email']     as String? ?? '';
-      _phoneController.text     = profile['phone']     as String? ?? '';
+      // If the backend returned an empty JSON object “{}” (unlikely, but just in case):
+      if (profile.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile data is empty (503)')),
+        );
+        return;
+      }
+
+      // Populate controllers now that we have a non-empty map:
+      _nameController.text  = profile['name']  as String? ?? '';
+      _emailController.text = profile['email'] as String? ?? '';
+      _phoneController.text = profile['phone'] as String? ?? '';
       if (profile['birthDate'] != null) {
         final dt = DateTime.parse(profile['birthDate']).toLocal();
-        // Format as dd-MM-yyyy into the controller
         _birthDateController.text = DateFormat('dd-MM-yyyy').format(dt);
       } else {
         _birthDateController.text = '';
       }
     } else {
-      final Map<String, dynamic> profile =
-          await _apiService.fetchDoctorById(_userId);
-
-      _nameController.text       = profile['name']      as String? ?? '';
-      _emailController.text      = profile['email']     as String? ?? '';
-      _specialtyController.text  = profile['specialty'] as String? ?? '';
-      _roleFieldController.text  = profile['role']      as String? ?? '';
+      // Doctor branch: same pattern
+      Map<String, dynamic> profile;
+      try {
+        profile = await _apiService.fetchDoctorById(_userId);
+      } catch (err) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to fetch profile (network error)')),
+        );
+        return;
+      }
+      if (profile.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile data is empty (503)')),
+        );
+        return;
+      }
+      _nameController.text      = profile['name']      as String? ?? '';
+      _emailController.text     = profile['email']     as String? ?? '';
+      _specialtyController.text = profile['specialty'] as String? ?? '';
+      _roleFieldController.text = profile['role']      as String? ?? '';
     }
-  }
+}
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
