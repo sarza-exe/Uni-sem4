@@ -1,11 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:google_sign_in_web/google_sign_in_web.dart' as web;
+import '../widgets/google_button.dart';
 import '../services/api_service.dart';
-
-// flutter run --web-port=5000
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -15,44 +12,43 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _emailController    = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
+
   // radio button state for user type
   String _selectedType = 'patient';
 
   static const String WEB_CLIENT_ID =
       '67750453943-d784cdhm13nbo13qimepoegbqeakfgdg.apps.googleusercontent.com';
 
-  // Initialize GoogleSignIn
+  // 1) Initialize GoogleSignIn
   late final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb ? WEB_CLIENT_ID : null,
     serverClientId: kIsWeb ? null : WEB_CLIENT_ID,
     scopes: ['email'],
   );
 
-  // This is for sign in with google on android
+  // 2) Android/iOS sign-in handler
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
     try {
       final account = await _googleSignIn.signIn();
-
       if (account == null) {
-        return; // User cancelled the sign-in dialog
+        // User cancelled
+        return;
       }
 
       final googleAuth = await account.authentication;
       final String? idToken = googleAuth.idToken;
-      print("Fetched idToken = $idToken");
 
       if (idToken == null) {
         throw Exception('No ID token from Google.');
       }
 
-      // Send the idToken to backend
-      final result = await _apiService.loginWithGoogle(idToken, 'patient');
-
+      final result = await _apiService.loginWithGoogle(idToken, _selectedType);
+      if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(
         '/home',
         arguments: {
@@ -61,7 +57,6 @@ class _LoginScreenState extends State<LoginScreen> {
         },
       );
     } catch (e) {
-      print("Google Sign-In failed: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Google Sign-In failed: $e')),
       );
@@ -72,7 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submitLogin() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
     try {
       await _apiService.login(
@@ -80,8 +74,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text.trim(),
         _selectedType,
       );
-
-      // If login succeeded, navigate to home
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
@@ -94,42 +86,40 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-void initState() {
-  super.initState();
-
-  // This is for sign in with google on web
-  _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) async {
-    if (account != null) {
-      try {
-        setState(() => _isLoading = true);
-        final googleAuth = await account.authentication;
-        final String? idToken = googleAuth.idToken;
-
-        if (idToken == null) {
-          throw Exception("No ID token received from Google");
+  void initState() {
+    super.initState();
+    // Web‐only: listen for the sign-in result
+    if (kIsWeb) {
+      _googleSignIn.onCurrentUserChanged.listen((account) async {
+        if (account != null) {
+          setState(() => _isLoading = true);
+          try {
+            final googleAuth = await account.authentication;
+            final String? idToken = googleAuth.idToken;
+            if (idToken == null) {
+              throw Exception('No ID token from Google on web.');
+            }
+            final result =
+                await _apiService.loginWithGoogle(idToken, _selectedType);
+            if (!mounted) return;
+            Navigator.of(context).pushReplacementNamed(
+              '/home',
+              arguments: {
+                'role': result['role'],
+                'id':   result['id'],
+              },
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Sign-in error: $e')),
+            );
+          } finally {
+            if (mounted) setState(() => _isLoading = false);
+          }
         }
-
-        final result = await _apiService.loginWithGoogle(idToken, _selectedType);
-        
-        // Navigate after successful login
-        if (!mounted) return;
-        Navigator.of(context).pushReplacementNamed(
-          '/home',
-          arguments: {
-            'role': result['role'],
-            'id': result['id'],
-          },
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign-in error: $e')),
-        );
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
-      }
+      });
     }
-  });
-}
+  }
 
   @override
   void dispose() {
@@ -138,24 +128,7 @@ void initState() {
     super.dispose();
   }
 
-  Widget _buildGoogleSignInButton() {
-  if (!kIsWeb) {
-    return InkWell(
-      onTap: _handleGoogleSignIn,
-      child: Image.asset('assets/google_logo.png'),
-    );
-  }
-  
-  web.GoogleSignInPlugin goog = (GoogleSignInPlatform.instance as web.GoogleSignInPlugin);
-  goog.init();
-  return goog.renderButton(configuration: web.GSIButtonConfiguration(
-            theme: web.GSIButtonTheme.filledBlue,
-            text: web.GSIButtonText.signinWith,
-            shape: web.GSIButtonShape.pill,
-          ),);
-}
-
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Clinic Login')),
@@ -168,7 +141,7 @@ void initState() {
               children: [
                 const SizedBox(height: 48),
 
-                // Radio buttons for selecting user type
+                // Radio buttons for user type
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -176,9 +149,7 @@ void initState() {
                       value: 'patient',
                       groupValue: _selectedType,
                       onChanged: (value) {
-                        setState(() {
-                          _selectedType = value!;
-                        });
+                        setState(() => _selectedType = value!);
                       },
                     ),
                     const Text('Patient'),
@@ -187,9 +158,7 @@ void initState() {
                       value: 'doctor',
                       groupValue: _selectedType,
                       onChanged: (value) {
-                        setState(() {
-                          _selectedType = value!;
-                        });
+                        setState(() => _selectedType = value!);
                       },
                     ),
                     const Text('Doctor'),
@@ -254,10 +223,11 @@ void initState() {
                   child: const Text('Create an account'),
                 ),
                 const SizedBox(height: 12),
-                 // Google Sign-In button
-                 _isLoading
-                  ? const CircularProgressIndicator()
-                  : _buildGoogleSignInButton(),
+
+                // Google Sign-In button (mobile or web)
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : buildGoogleSignInButton(_handleGoogleSignIn),
               ],
             ),
           ),
@@ -266,4 +236,3 @@ void initState() {
     );
   }
 }
-
