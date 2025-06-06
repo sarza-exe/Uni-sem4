@@ -1,7 +1,5 @@
 // lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import 'login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/drawer.dart';
 
@@ -20,15 +18,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadRoleFromStorage();
-  }
-
-  Future<void> _logout(BuildContext context) async {
-    await ApiService().logout(); // Implement logout to delete JWT from storage
-    if (!context.mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
   }
 
   Future<void> _loadRoleFromStorage() async {

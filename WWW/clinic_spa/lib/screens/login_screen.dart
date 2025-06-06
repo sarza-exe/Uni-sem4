@@ -1,7 +1,11 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import 'package:google_sign_in_web/google_sign_in_web.dart' as web;
 import '../services/api_service.dart';
+
+// flutter run --web-port=5000
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -18,36 +22,26 @@ class _LoginScreenState extends State<LoginScreen> {
   // radio button state for user type
   String _selectedType = 'patient';
 
-  // Replace this with your Web client ID (OAuth2 → Web application) from Cloud Console
   static const String WEB_CLIENT_ID =
       '67750453943-d784cdhm13nbo13qimepoegbqeakfgdg.apps.googleusercontent.com';
 
-  // 1) Initialize GoogleSignIn so that:
-  //    • On web: clientId = WEB_CLIENT_ID (plugin picks up the meta tag, but we pass it explicitly)
-  //    • On Android: serverClientId = WEB_CLIENT_ID (so account.authentication.idToken is non-null)
+  // Initialize GoogleSignIn
   late final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb ? WEB_CLIENT_ID : null,
     serverClientId: kIsWeb ? null : WEB_CLIENT_ID,
     scopes: ['email'],
   );
 
+  // This is for sign in with google on android
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
     try {
-      // 2) Call signIn() on all platforms (despite the web deprecation warning).
-      //    On web you’ll see a “deprecated” notice, but it still works.
-      //    On Android, because we set serverClientId, it will return an idToken.
-      print("\nBefore signIn()");
       final account = await _googleSignIn.signIn();
-      print("\nAfter signIn(): account = $account");
 
       if (account == null) {
-        // User cancelled the sign-in dialog
-        return;
+        return; // User cancelled the sign-in dialog
       }
 
-      // 3) Fetch the idToken. On Android, serverClientId ensures this is non-null.
-      //    On Web, the plugin will grab it from the meta tag / JS flow.
       final googleAuth = await account.authentication;
       final String? idToken = googleAuth.idToken;
       print("Fetched idToken = $idToken");
@@ -56,10 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('No ID token from Google.');
       }
 
-      // 4) Send the idToken to your backend:
+      // Send the idToken to backend
       final result = await _apiService.loginWithGoogle(idToken, 'patient');
-      // result = { 'token': yourAppJwt, 'role': 'patient', 'id': 'mongodbObjectId' }
-
 
       Navigator.of(context).pushReplacementNamed(
         '/home',
@@ -93,7 +85,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
@@ -103,11 +94,66 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
+void initState() {
+  super.initState();
+
+  // This is for sign in with google on web
+  _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) async {
+    if (account != null) {
+      try {
+        setState(() => _isLoading = true);
+        final googleAuth = await account.authentication;
+        final String? idToken = googleAuth.idToken;
+
+        if (idToken == null) {
+          throw Exception("No ID token received from Google");
+        }
+
+        final result = await _apiService.loginWithGoogle(idToken, _selectedType);
+        
+        // Navigate after successful login
+        if (!mounted) return;
+        Navigator.of(context).pushReplacementNamed(
+          '/home',
+          arguments: {
+            'role': result['role'],
+            'id': result['id'],
+          },
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign-in error: $e')),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  });
+}
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
+
+  Widget _buildGoogleSignInButton() {
+  if (!kIsWeb) {
+    return InkWell(
+      onTap: _handleGoogleSignIn,
+      child: Image.asset('assets/google_logo.png'),
+    );
+  }
+  
+  web.GoogleSignInPlugin goog = (GoogleSignInPlatform.instance as web.GoogleSignInPlugin);
+  goog.init();
+  return goog.renderButton(configuration: web.GSIButtonConfiguration(
+            theme: web.GSIButtonTheme.filledBlue,
+            text: web.GSIButtonText.signinWith,
+            shape: web.GSIButtonShape.pill,
+          ),);
+}
 
 @override
   Widget build(BuildContext context) {
@@ -211,13 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                  // Google Sign-In button
                  _isLoading
                   ? const CircularProgressIndicator()
-                  : InkWell(
-                      onTap: _handleGoogleSignIn,
-                      child: Image.asset(
-                        'assets/google_logo.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
+                  : _buildGoogleSignInButton(),
               ],
             ),
           ),

@@ -19,6 +19,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   intl: ^0.18.0
   jwt_decoder: ^2.0.1
+  google_sign_in_web: ^0.12.4+4
+  google_sign_in_platform_interface: ^2.5.0
 
 dev_dependencies:
   flutter_test:

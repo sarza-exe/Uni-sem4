@@ -8,6 +8,8 @@ import 'screens/appointments_screen.dart';
 import 'screens/create_appointment_screen.dart';
 import 'screens/profile_screen.dart';
 
+// flutter run --web-port=5000
+
 void main() => runApp(const ClinicApp());
 
 class ClinicApp extends StatelessWidget {
