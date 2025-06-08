@@ -127,7 +127,10 @@ class _PatientsScreenState extends State<PatientsScreen> {
         title: const Text('Patients'),
       ),
       drawer: MainDrawer(currentRoute: '/patients', role: role),
-      body: _isLoading
+      body: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1200),
+        child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _fetchPatients,
@@ -174,6 +177,8 @@ class _PatientsScreenState extends State<PatientsScreen> {
                 },
               ),
             ),
+        ),
+      ),
     );
   }
 }

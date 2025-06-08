@@ -69,6 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
+      print("TRYING LOGIN\n");
       await _apiService.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
@@ -131,104 +132,114 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Clinic Login')),
+      appBar: AppBar(),
       body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                const SizedBox(height: 48),
-
-                // Radio buttons for user type
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Radio<String>(
-                      value: 'patient',
-                      groupValue: _selectedType,
-                      onChanged: (value) {
-                        setState(() => _selectedType = value!);
-                      },
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  Text(
+                    "CLINIC LOGIN",
+                    style: TextStyle(color: Colors.deepPurpleAccent, fontSize: 30),
                     ),
-                    const Text('Patient'),
-                    const SizedBox(width: 16),
-                    Radio<String>(
-                      value: 'doctor',
-                      groupValue: _selectedType,
-                      onChanged: (value) {
-                        setState(() => _selectedType = value!);
-                      },
+                  const SizedBox(height: 24),
+                  // Radio buttons for user type
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Radio<String>(
+                        value: 'patient',
+                        groupValue: _selectedType,
+                        onChanged: (value) {
+                          setState(() => _selectedType = value!);
+                        },
+                      ),
+                      const Text('Patient'),
+                      const SizedBox(width: 16),
+                      Radio<String>(
+                        value: 'doctor',
+                        groupValue: _selectedType,
+                        onChanged: (value) {
+                          setState(() => _selectedType = value!);
+                        },
+                      ),
+                      const Text('Doctor'),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
                     ),
-                    const Text('Doctor'),
-                  ],
-                ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(),
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 225),
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _submitLogin,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        // (no need for maximumSize here)
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Log In'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/register');
+                    },
+                    child: const Text('Create an account'),
+                  ),
+                  const SizedBox(height: 12),
 
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submitLogin,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Log In'),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/register');
-                  },
-                  child: const Text('Create an account'),
-                ),
-                const SizedBox(height: 12),
-
-                // Google Sign-In button (mobile or web)
-                _isLoading
-                    ? const CircularProgressIndicator()
-                    : buildGoogleSignInButton(_handleGoogleSignIn),
-              ],
+                  // Google Sign-In button (mobile or web)
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : buildGoogleSignInButton(_handleGoogleSignIn),
+                ],
+              ),
             ),
           ),
         ),

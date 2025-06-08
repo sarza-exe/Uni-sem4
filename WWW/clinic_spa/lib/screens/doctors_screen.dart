@@ -260,13 +260,16 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Doctors'),
-      ),
-      drawer: MainDrawer(currentRoute: '/doctors', role: _role),
-      body: _isLoading
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Doctors'),
+    ),
+    drawer: MainDrawer(currentRoute: '/doctors', role: _role),
+    body: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1200),
+        child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _fetchDoctors,
@@ -275,7 +278,10 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
                 itemBuilder: (ctx, index) {
                   final doc = _doctors[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     child: ListTile(
                       title: Text(doc['name']),
                       subtitle: Text(
@@ -285,26 +291,29 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
                       ),
                       isThreeLine: true,
                       trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_role == 'admin')
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => _deleteDoctor(doc['_id']),
-                                ),
-                            ],
-                          ),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_role == 'admin')
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _deleteDoctor(doc['_id']),
+                            ),
+                        ],
+                      ),
                     ),
                   );
                 },
               ),
             ),
-      floatingActionButton: _role == 'admin'
-          ? FloatingActionButton(
-              onPressed: _showCreateDoctorDialog,
-              child: const Icon(Icons.add),
-            )
-          : null,
-    );
-  }
+      ),
+    ),
+    floatingActionButton: _role == 'admin'
+      ? FloatingActionButton(
+          onPressed: _showCreateDoctorDialog,
+          child: const Icon(Icons.add),
+        )
+      : null,
+  );
+}
+
 }

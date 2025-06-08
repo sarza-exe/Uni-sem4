@@ -175,113 +175,118 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 1. Specialty filter dropdown
-                  DropdownButton<String>(
-                    hint: const Text('Filter by Specialty'),
-                    value: _selectedSpecialty,
-                    items: ['All', ..._specialties].map((String specialty) {
-                      return DropdownMenuItem<String>(
-                        value: specialty,
-                        child: Text(specialty),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedSpecialty = newValue;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 10),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1000),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 1. Specialty filter dropdown
+                      DropdownButton<String>(
+                        hint: const Text('Filter by Specialty'),
+                        value: _selectedSpecialty,
+                        items: ['All', ..._specialties].map((String specialty) {
+                          return DropdownMenuItem<String>(
+                            value: specialty,
+                            child: Text(specialty),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedSpecialty = newValue;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 10),
 
-                  // 2. ListView of filtered doctors
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: _filteredDoctors.length,
-                      itemBuilder: (ctx, index) {
-                        final doctor = _filteredDoctors[index];
-                        final isSelected = _selectedDoctor != null &&
-                            _selectedDoctor['_id'] == doctor['_id'];
-                        return ListTile(
-                          title: Text(doctor['name']),
-                          subtitle: Text(doctor['specialty']),
-                          selected: isSelected,
-                          onTap: () {
+                      // 2. ListView of filtered doctors
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: _filteredDoctors.length,
+                          itemBuilder: (ctx, index) {
+                            final doctor = _filteredDoctors[index];
+                            final isSelected = _selectedDoctor != null &&
+                                _selectedDoctor['_id'] == doctor['_id'];
+                            return ListTile(
+                              title: Text(doctor['name']),
+                              subtitle: Text(doctor['specialty']),
+                              selected: isSelected,
+                              onTap: () {
+                                setState(() {
+                                  _selectedDoctor = doctor;
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+                      // 3. Show selected doctor
+                      if (_selectedDoctor != null)
+                        Text(
+                          'Selected Doctor: ${_selectedDoctor['name']}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                      const SizedBox(height: 10),
+                      // 4. Date picker
+                      Row(
+                        children: [
+                          ElevatedButton(
+                            onPressed: _pickDate,
+                            child: const Text('Choose Date'),
+                          ),
+                          const SizedBox(width: 10),
+                          if (_selectedDate != null)
+                            Text(DateFormat.yMMMd().format(_selectedDate!)),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+                      // 5. Time slot dropdown (visible once a date is chosen)
+                      if (_selectedDate != null)
+                        DropdownButton<String>(
+                          hint: const Text('Choose Time'),
+                          value: _selectedTime,
+                          items: _timeSlots.map((String slot) {
+                            return DropdownMenuItem<String>(
+                              value: slot,
+                              child: Text(slot),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
                             setState(() {
-                              _selectedDoctor = doctor;
+                              _selectedTime = newValue;
                             });
                           },
-                        );
-                      },
-                    ),
-                  ),
+                        ),
 
-                  const SizedBox(height: 10),
-                  // 3. Show selected doctor
-                  if (_selectedDoctor != null)
-                    Text(
-                      'Selected Doctor: ${_selectedDoctor['name']}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-
-                  const SizedBox(height: 10),
-                  // 4. Date picker
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: _pickDate,
-                        child: const Text('Choose Date'),
+                      const SizedBox(height: 10),
+                      // 6. Reason input
+                      TextField(
+                        controller: _reasonController,
+                        decoration: const InputDecoration(
+                          labelText: 'Reason for Appointment',
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: 2,
                       ),
-                      const SizedBox(width: 10),
-                      if (_selectedDate != null)
-                        Text(DateFormat.yMMMd().format(_selectedDate!)),
+
+                      const SizedBox(height: 20),
+                      // 7. Submit button
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: _submitAppointment,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                          child: const Text('Create Appointment'),
+                        ),
+                      ),
                     ],
                   ),
-
-                  const SizedBox(height: 10),
-                  // 5. Time slot dropdown (visible once a date is chosen)
-                  if (_selectedDate != null)
-                    DropdownButton<String>(
-                      hint: const Text('Choose Time'),
-                      value: _selectedTime,
-                      items: _timeSlots.map((String slot) {
-                        return DropdownMenuItem<String>(
-                          value: slot,
-                          child: Text(slot),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedTime = newValue;
-                        });
-                      },
-                    ),
-
-                  const SizedBox(height: 10),
-                  // 6. Reason input
-                  TextField(
-                    controller: _reasonController,
-                    decoration: const InputDecoration(
-                      labelText: 'Reason for Appointment',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 2,
-                  ),
-
-                  const SizedBox(height: 20),
-                  // 7. Submit button
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: _submitAppointment,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50),
-                      ),
-                      child: const Text('Create Appointment'),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
     );

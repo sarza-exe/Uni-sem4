@@ -93,10 +93,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: ConstrainedBox(
+                // make the box at least as tall as the viewport
+                constraints: BoxConstraints(maxWidth: 600),
           child: Form(
             key: _formKey,
             child: Column(
               children: [
+                Text(
+                    "CLINIC REGISTER",
+                    style: TextStyle(color: Colors.deepPurpleAccent, fontSize: 30),
+                    ),
                 const SizedBox(height: 24),
                 TextFormField(
                   controller: _nameController,
@@ -208,6 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),

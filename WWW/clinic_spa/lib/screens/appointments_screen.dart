@@ -291,61 +291,66 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
             // Appointment List
             Expanded(
-              child: FutureBuilder<List<dynamic>>(
-                future: _futureAppointments,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (_loadError != null) {
-                    return Center(child: Text(_loadError!));
-                  }
-                  else if (snapshot.hasError) {
-                    print("losefsefsef");
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  }
-                  final appointments = snapshot.data ?? [];
-                  if (appointments.isEmpty) {
-                    return const Center(child: Text('No appointments found.'));
-                  }
-                  return ListView.builder(
-                    itemCount: appointments.length,
-                    itemBuilder: (ctx, index) {
-                      final appt = appointments[index];
-                      final dt = DateTime.parse(appt['date']).toLocal();
-                      final formattedDate = '${dt.day.toString().padLeft(2, '0')}-'
-                      '${dt.month.toString().padLeft(2, '0')}-'
-                      '${dt.year}';
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        child: ListTile(
-                          title: Text('Dr: ${appt['doctor']['name']}'),
-                          subtitle: Text(
-                            'Pt: ${appt['patient']['name']}\n'
-                            'Date: $formattedDate\n'
-                            'Status: ${appt['status']}\n'
-                            'Reason: ${appt['reason']}',
-                          ),
-                          isThreeLine: true,
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_role != 'patient')
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.blue),
-                                  onPressed: () => _editAppointment(appt),
-                                ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteAppointment(appt['_id']),
+              child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: FutureBuilder<List<dynamic>>(
+                    future: _futureAppointments,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (_loadError != null) {
+                        return Center(child: Text(_loadError!));
+                      }
+                      else if (snapshot.hasError) {
+                        print("losefsefsef");
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      }
+                      final appointments = snapshot.data ?? [];
+                      if (appointments.isEmpty) {
+                        return const Center(child: Text('No appointments found.'));
+                      }
+                      return ListView.builder(
+                        itemCount: appointments.length,
+                        itemBuilder: (ctx, index) {
+                          final appt = appointments[index];
+                          final dt = DateTime.parse(appt['date']).toLocal();
+                          final formattedDate = '${dt.day.toString().padLeft(2, '0')}-'
+                          '${dt.month.toString().padLeft(2, '0')}-'
+                          '${dt.year}';
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            child: ListTile(
+                              title: Text('Dr: ${appt['doctor']['name']}'),
+                              subtitle: Text(
+                                'Pt: ${appt['patient']['name']}\n'
+                                'Date: $formattedDate\n'
+                                'Status: ${appt['status']}\n'
+                                'Reason: ${appt['reason']}',
                               ),
-                            ],
-                          ),
-                        ),
+                              isThreeLine: true,
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_role != 'patient')
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, color: Colors.blue),
+                                      onPressed: () => _editAppointment(appt),
+                                    ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _deleteAppointment(appt['_id']),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
+                  ),
+                 ),
               ),
             ),
           ],

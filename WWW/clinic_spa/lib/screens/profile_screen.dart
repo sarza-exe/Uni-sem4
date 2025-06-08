@@ -155,105 +155,124 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         // Now we can build the actual form, since all controllers have text set
-       return Scaffold(
-          appBar: AppBar(
-            title: const Text('My Profile'),
-          ),
-          drawer: MainDrawer(currentRoute: '/profile', role: _role),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                children: [
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Name',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+        return Scaffold(
+        appBar: AppBar(title: const Text('My Profile')),
+        drawer: MainDrawer(currentRoute: '/profile', role: _role),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              // allow overscroll when content is small
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                // make the box at least as tall as the viewport
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Align(
+                  // center both vertically & horizontally
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    // cap width at 1000px
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Form(
+                        key: _formKey,
+                        child: ListView(
+                          // disable its own scrolling; we scroll the parent
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Name',
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a name';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
 
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter an email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _emailController,
+                              decoration: const InputDecoration(
+                                labelText: 'Email',
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter an email';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Enter a valid email';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
 
-                  if (_role == 'patient') ...[
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                            if (_role == 'patient') ...[
+                              TextFormField(
+                                controller: _phoneController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Phone',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _birthDateController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Birth Date',
+                                  border: OutlineInputBorder(),
+                                ),
+                                readOnly: true,
+                              ),
+                              const SizedBox(height: 16),
+                            ] else ...[
+                              TextFormField(
+                                controller: _specialtyController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Specialty',
+                                  border: OutlineInputBorder(),
+                                ),
+                                readOnly: true,
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _roleFieldController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Role',
+                                  border: OutlineInputBorder(),
+                                ),
+                                readOnly: true,
+                              ),
+                              const SizedBox(height: 16),
+                            ],
 
-                    TextFormField(
-                      controller: _birthDateController,
-                      decoration: const InputDecoration(
-                        labelText: 'Birth Date',
-                        border: OutlineInputBorder(),
-                      ),
-                      readOnly: true,
-                    ),
-                    const SizedBox(height: 16),
-                  ] else ...[
-                    TextFormField(
-                      controller: _specialtyController,
-                      decoration: const InputDecoration(
-                        labelText: 'Specialty',
-                        border: OutlineInputBorder(),
-                      ),
-                      readOnly: true,
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _roleFieldController,
-                      decoration: const InputDecoration(
-                        labelText: 'Role',
-                        border: OutlineInputBorder(),
-                      ),
-                      readOnly: true,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  _isSaving
-                      ? const Center(child: CircularProgressIndicator())
-                      : ElevatedButton(
-                          onPressed: _saveProfile,
-                          child: const Text('Save Changes'),
+                            _isSaving
+                              ? const Center(child: CircularProgressIndicator())
+                              : ElevatedButton(
+                                  onPressed: _saveProfile,
+                                  child: const Text('Save Changes'),
+                                ),
+                          ],
                         ),
-                ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+            );
+          },
+        ),
+      );
+    },
+  );
+}
 
   @override
   void dispose() {
