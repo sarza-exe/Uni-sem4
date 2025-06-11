@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
 from sklearn.neighbors import NearestNeighbors
+import numpy as np
+
+from metrics import compute_and_print_metrics, compute_and_display_purity
 
 class Dbscan:
     def __init__(self, eps, min_samples, verbose=False):
@@ -68,14 +71,9 @@ class Dbscan:
 
 def load_mnist():
     mnistDataSet = tf.keras.datasets.mnist
-
     (x_train, y_train), (x_test, y_test) = mnistDataSet.load_data()
     x_train, x_test = x_train / 255.0, x_test / 255.0
     x_train = x_train.reshape((-1, x_train.shape[1]*x_train.shape[2]))
-    x_test = x_test.reshape((-1, x_test.shape[1]*x_test.shape[2]))
-
-    x_train = x_train[:5000]
-    y_train = y_train[:5000]
 
     return x_train, y_train
 
@@ -83,73 +81,80 @@ def reduce_dimensions(x_train):
     # We need to reduce the number of dimensions in order for DBSCAN to work correctly
     # DBSCAN has a curse of dimensionality (and 784 is a lot of dimensions)
     print("Applying PCA...")
-    pca = PCA(n_components=50) # reduce dimensions from 784 to 50
+    pca = PCA(n_components=50, random_state=0) # reduce dimensions from 784 to 50
     pca_res_50 = pca.fit_transform(x_train)
 
     print("Applying T-SNE...")
-    tsne = TSNE(n_components = 2, random_state=0) # reduce dimensions from 50 to 2
+    tsne = TSNE(n_components=2, random_state=0, n_jobs=-1, perplexity=30, learning_rate='auto', init='random') # reduce dimensions from 50 to 2
     tsne_res = tsne.fit_transform(pca_res_50)
 
     print("Dimensions reduced")
     return tsne_res
 
+# Plot k-distance graph to guide eps choice:
+def plot_k_distance(X, k):
+    from sklearn.neighbors import NearestNeighbors
+    nbrs = NearestNeighbors(n_neighbors=k).fit(X)
+    distances, _ = nbrs.kneighbors(X)
+    # distance to k-th neighbor for each point:
+    k_distances = np.sort(distances[:, k-1])
+    plt.figure(figsize=(6,4))
+    plt.plot(k_distances)
+    plt.xlabel(f"Points sorted by distance to {k}-th neighbor")
+    plt.ylabel(f"Distance to {k}-th neighbor")
+    plt.title(f"k-distance Graph (k={k})")
+    plt.grid(True)
+    plt.savefig("plots/k_distance.png")
+    plt.show()
+
 if __name__ == '__main__':
 
+    # data loading and diemnsions reducing
     x_train, y_train = load_mnist()
     tsne_train = reduce_dimensions(x_train)
 
+    # plot data with real labels
     print("Data plot with real labels:")
-    plt.figure(figsize=(16,10))
-    sns.scatterplot(x = tsne_train[:,0], y = tsne_train[:,1], hue = y_train, legend = 'full') #palette = sns.hls_palette(10),
+    plt.figure(figsize=(10,7))
+    sns.scatterplot(x = tsne_train[:,0], y = tsne_train[:,1], hue = y_train, legend = 'full', palette = sns.hls_palette(10))
+    plt.title("True labels for datapoints", pad=15)
+    plt.savefig("plots/true_labels.png")
+    plt.tight_layout()
 
-    eps = 2.4
-    min_samples = 7
+    print("k-distance graph:")
+    min_samples = 11 #7 9
+    plot_k_distance(tsne_train, k=min_samples)
+
+    # dbsacan
+    eps = 2.0 # 2.4 2.2
     dbscan = Dbscan(eps, min_samples)
     labels = dbscan.fit(tsne_train)
 
     # plot clusters
-    plt.figure(figsize=(8,6))
+    plt.figure(figsize=(10,7))
     unique_labels = np.unique(labels)
-    colors = plt.cm.get_cmap('tab20', len(unique_labels))
+    cluster_labels = [lbl for lbl in unique_labels if lbl != -1]
+    palette = sns.hls_palette(len(cluster_labels))
+    color_map = {lbl: palette[i] for i, lbl in enumerate(cluster_labels)}
+
     for lbl in unique_labels:
         if lbl == -1:
-            color = 'k'
-            marker = 'x'
-            size = 15
+            color = 'black'
+            marker = 'o'
+            size = 0.2
             label_name = "Noise"
         else:
-            color = colors(lbl)
+            color = color_map[lbl]
             marker = 'o'
-            size = 10
+            size = 3
             label_name = f"Cluster {lbl}"
         pts = tsne_train[labels == lbl]
         plt.scatter(pts[:,0], pts[:,1], c=[color], s=size, marker=marker, label=label_name)
     plt.legend(markerscale=2, bbox_to_anchor=(1.05,1), loc='upper left', fontsize='small')
     plt.title(f"DBSCAN Clustering (eps={eps}, min_samples={min_samples})")
+    plt.tight_layout()
+    plt.savefig("plots/clusters.png")
     plt.show()
 
-    # Compute metrics
-    n_samples = len(y_train)
-    noise_count = np.sum(labels == -1)
-    noise_percent = noise_count / n_samples * 100
-
-    # For non-noise clusters, compute majority-vote accuracy
-    clustered_mask = labels != -1
-    total_clustered = np.sum(clustered_mask)
-    correct = 0
-    for lbl in np.unique(labels[clustered_mask]):
-        cluster_indices = np.where(labels == lbl)[0]
-        true_labels = y_train[cluster_indices]
-        # Majority vote:
-        counts = np.bincount(true_labels)
-        majority_label = np.argmax(counts)
-        correct += np.sum(true_labels == majority_label)
-    accuracy_in_clusters = (correct / total_clustered * 100) if total_clustered > 0 else 0
-    error_in_clusters = 100 - accuracy_in_clusters
-
-    print(f"Total samples: {n_samples}")
-    print(f"Noise points: {noise_count} ({noise_percent:.2f}%)")
-    print(f"Points in clusters: {total_clustered} ({100 - noise_percent:.2f}%)")
-    print(f"Accuracy within clusters (majority-vote): {accuracy_in_clusters:.2f}%")
-    print(f"Error rate within clusters: {error_in_clusters:.2f}%")
-
+    compute_and_print_metrics(y_train, labels)
+    compute_and_display_purity(labels, y_train)

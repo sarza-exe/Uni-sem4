@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     runs = 10
     batch = 256
-    iters = 30
+    iters = 100
     ks = [10, 15, 20, 30]
 
     for k in ks:
