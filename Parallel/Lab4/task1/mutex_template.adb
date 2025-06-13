@@ -7,7 +7,7 @@ procedure  Mutex_Template is
 
 -- Processes 
 
-  Nr_Of_Processes : constant Integer :=15;
+  Nr_Of_Processes : constant Integer := 15;
 
   Min_Steps : constant Integer := 50 ;
   Max_Steps : constant Integer := 100 ;
@@ -117,6 +117,80 @@ procedure  Mutex_Template is
 
   end Printer;
 
+   -- For an atomic object (including an atomic component) all reads 
+  -- and updates of the object as a whole are indivisible.
+
+  -- -1  5  15  7 LOCAL_SECTION;ENTRY_PROTOCOL_1;ENTRY_PROTOCOL_2;ENTRY_PROTOCOL_3;ENTRY_PROTOCOL_4;CRITICAL_SECTION;EXIT_PROTOCOL;Extra;
+  type Int_Array is array (0 .. Nr_Of_Processes-1) of Integer
+    with Atomic_Components => True;
+
+  Flag : Int_Array  := (others => 0);
+
+  -- Można użyć indeksowania od 1 wzwyż lub od 0, ważne: nieistotny index,
+   -- bo iterujemy po wartościach.
+   type Allowed_Set is array (Positive range <>) of Integer;
+
+
+  function All_Flags_In(First_Index : Integer; Last_Index : Integer;
+                           Set_Allowed : Allowed_Set)  return Boolean is
+   begin
+      if Last_Index <= First_Index then
+         -- brak elementów do sprawdzenia
+         return True;
+      end if;
+      -- iterujemy od pierwszego indeksu aż do Last_Index-1
+      for I in First_Index .. Last_Index-1 loop
+         declare
+            V : Integer := Flag(I);  -- atomowy odczyt
+            In_Set : Boolean := False;
+         begin
+            for J in Set_Allowed'Range loop
+               if V = Set_Allowed(J) then
+                  In_Set := True;
+                  exit;
+               end if;
+            end loop;
+            if not In_Set then
+               return False;
+            end if;
+         end;
+      end loop;
+      return True;
+   end All_Flags_In;
+
+
+   procedure Wait_All_Flags_In(First_Index : Integer; Last_Index : Integer;
+                           Set_Allowed : Allowed_Set) is
+      begin
+         loop
+            exit when All_Flags_In(First_Index, Last_Index, Set_Allowed);
+            delay 0.01;
+         end loop;
+      end Wait_All_Flags_In;
+
+   function Any_Flag_In(Set_Allowed : Integer) return Boolean is
+   begin
+      for I in Flag'Range loop
+         declare
+            V : Integer := Flag(I);  -- atomowy odczyt dzięki Atomic_Components
+         begin
+            if V = Set_Allowed then
+               return True;
+            end if;
+         end;
+      end loop;
+      return False;
+   end Any_Flag_In;
+
+   procedure Wait_Any_Flag_In(Set_Allowed: Integer) is
+      begin
+         loop
+            exit when Any_Flag_In(Set_Allowed);
+            delay 0.01;
+         end loop;
+      end Wait_Any_Flag_In;
+
+
 
   -- Processes
   type Process_Type is record
@@ -180,13 +254,29 @@ procedure  Mutex_Template is
     end Start;
 
 --    for Step in 0 .. Nr_of_Steps loop
-    for Step in 0 .. Nr_of_Steps/4 - 1  loop  -- TEST !!!
+    for Step in 0 .. Nr_of_Steps/7 - 1  loop  -- TEST !!!
       -- LOCAL_SECTION - start
       delay Min_Delay+(Max_Delay-Min_Delay)*Duration(Random(G));
       -- LOCAL_SECTION - end
 
-      Change_State( ENTRY_PROTOCOL ); -- starting ENTRY_PROTOCOL
-      -- implement the ENTRY_PROTOCOL here ...
+      Change_State ( Entry_Protocol_1);
+
+      Flag(Process.Id) := 1;
+      Wait_All_Flags_In(0, Nr_Of_Processes, (0,1,2));
+
+      Flag(Process.Id) := 3;
+      Change_State ( Entry_Protocol_2);
+
+      if Any_Flag_In(1) then
+         Flag(Process.Id) := 2;
+         Change_State (Entry_Protocol_3);
+         Wait_Any_Flag_In (4);
+      end if;
+
+      Flag(Process.Id) := 4;
+      Change_State (Entry_Protocol_4);
+      Wait_All_Flags_In (0, Process.Id, (0,1));
+
       Change_State( CRITICAL_SECTION ); -- starting CRITICAL_SECTION
 
       -- CRITICAL_SECTION - start
@@ -195,6 +285,8 @@ procedure  Mutex_Template is
 
       Change_State( EXIT_PROTOCOL ); -- starting EXIT_PROTOCOL
       -- implement the EXIT_PROTOCOL here ...
+      Wait_All_Flags_In (First_Index => Process.Id+1, Last_Index => Nr_Of_Processes, Set_Allowed => (0,1,4));
+      Flag(Process.Id) := 0;
       Change_State( LOCAL_SECTION ); -- starting LOCAL_SECTION      
     end loop;
     
